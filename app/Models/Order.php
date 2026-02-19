@@ -55,6 +55,13 @@ class Order extends Model
         'cancelled_at',
         'notes',
         'admin_notes',
+        'source',
+        'return_status',
+        'return_reason',
+        'return_requested_at',
+        'return_completed_at',
+        'billing_sdi_code',
+        'billing_pec',
     ];
 
     protected $casts = [
@@ -68,6 +75,8 @@ class Order extends Model
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'return_requested_at' => 'datetime',
+        'return_completed_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -90,6 +99,41 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function transportDocuments(): HasMany
+    {
+        return $this->hasMany(TransportDocument::class);
+    }
+
+    public function warehouseMovements(): HasMany
+    {
+        return $this->hasMany(WarehouseMovement::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNotIn('status', ['delivered', 'cancelled']);
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->whereIn('status', ['delivered', 'cancelled']);
+    }
+
+    public function scopeBySource($query, string $source)
+    {
+        return $query->where('source', $source);
+    }
+
+    public function scopeWithReturns($query)
+    {
+        return $query->where('return_status', '!=', 'none');
     }
 
     // Scopes

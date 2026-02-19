@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,6 +24,7 @@ class Product extends Model
         'meta_description',
         'meta_keywords',
         'sku',
+        'brand_id',
         'price',
         'compare_at_price',
         'cost',
@@ -30,6 +32,8 @@ class Product extends Model
         'low_stock_threshold',
         'vat_rate',
         'barcode',
+        'weight',
+        'dimensions',
         'is_active',
         'is_featured',
         'manage_stock',
@@ -76,6 +80,33 @@ class Product extends Model
     }
 
     // Relazioni
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function warehouseMovements(): HasMany
+    {
+        return $this->hasMany(WarehouseMovement::class);
+    }
+
+    public function promotions(): BelongsToMany
+    {
+        return $this->belongsToMany(Promotion::class, 'promotion_product');
+    }
+
+    public function getMarginAttribute(): ?float
+    {
+        if (!$this->cost || $this->cost == 0) return null;
+        return round((($this->price - $this->cost) / $this->price) * 100, 2);
+    }
+
+    public function getMarginAmountAttribute(): ?float
+    {
+        if (!$this->cost) return null;
+        return round($this->price - $this->cost, 2);
+    }
+
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class)->withTimestamps();
