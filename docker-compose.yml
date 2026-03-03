@@ -1,0 +1,104 @@
+services:
+
+  # ─── PHP-FPM (Laravel app) ──────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sito_colors_app
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: sito_colors
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    volumes:
+      - .:/var/www
+      - vendor_data:/var/www/vendor   # vendor Linux-compatibile, separato dall'host
+    networks:
+      - sito_colors
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # ─── Nginx ──────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: sito_colors_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - sito_colors
+    depends_on:
+      - app
+
+  # ─── MySQL ──────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: sito_colors_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: sito_colors
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"   # 3307 sull'host → 3306 nel container (3306 locale già occupato da MySQL nativo)
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - sito_colors
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+
+  # ─── Queue worker ───────────────────────────────────────────────────────────
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sito_colors_queue
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3 --sleep=3
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: sito_colors
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    volumes:
+      - .:/var/www
+      - vendor_data:/var/www/vendor
+    networks:
+      - sito_colors
+    depends_on:
+      - app
+      - mysql
+
+  # ─── Vite (dev server con HMR) ──────────────────────────────────────────────
+  vite:
+    image: node:20-alpine
+    container_name: sito_colors_vite
+    working_dir: /var/www
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www
+      - node_modules_data:/var/www/node_modules  # node_modules Linux-compatibile
+    networks:
+      - sito_colors
+
+networks:
+  sito_colors:
+    driver: bridge
+
+volumes:
+  mysql_data:      # dati MySQL persistenti
+  vendor_data:     # vendor PHP (Linux-compatibile)
+  node_modules_data: # node_modules (Linux-compatibile)

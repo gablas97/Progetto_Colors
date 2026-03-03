@@ -1,0 +1,40 @@
+# Dipendenze (vengono installate nell'immagine o nei named volumes)
+vendor/
+node_modules/
+
+# File di ambiente (non vanno nell'immagine)
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Storage (montato come volume)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Build artifacts
+public/build/
+public/hot
+
+# Editor / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Docker stessi
+Dockerfile
+docker-compose*.yml
+docker/
+
+# Test
+tests/
+phpunit.xml
+
+# Documentazione
+README.md
