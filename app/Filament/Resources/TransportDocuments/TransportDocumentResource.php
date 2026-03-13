@@ -22,7 +22,7 @@ class TransportDocumentResource extends Resource
 {
     protected static ?string $model = TransportDocument::class;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-truck';
-    protected static string|UnitEnum|null $navigationGroup = 'DDT';
+    protected static string|UnitEnum|null $navigationGroup = 'Fatturazione';
     protected static ?string $navigationLabel = 'Documenti di Trasporto';
     protected static ?string $modelLabel = 'DDT';
     protected static ?string $pluralModelLabel = 'Documenti di Trasporto';

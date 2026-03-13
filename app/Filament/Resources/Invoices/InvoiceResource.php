@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Filament\Resources\Invoices;
 
 use App\Models\Invoice;
@@ -12,7 +11,6 @@ use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -44,21 +42,25 @@ class InvoiceResource extends Resource
                         ->searchable()->preload(),
                     Forms\Components\Select::make('status')->label('Stato')
                         ->options([
-                            'draft' => 'Bozza', 'sent' => 'Inviata', 'paid' => 'Pagata',
-                            'overdue' => 'Scaduta', 'cancelled' => 'Annullata',
+                            'draft'     => 'Bozza',
+                            'sent'      => 'Inviata',
+                            'paid'      => 'Pagata',
+                            'overdue'   => 'Scaduta',
+                            'cancelled' => 'Annullata',
                         ])->default('draft'),
                 ])->columns(2),
+
             Section::make('Dati Cliente')
                 ->schema([
                     Forms\Components\Select::make('user_id')->label('Cliente')
-                        ->relationship('user', 'email', fn ($query) => $query->where('role', 'customer'))
+                        ->relationship('user', 'email')
                         ->searchable()->preload()
                         ->live()
                         ->afterStateUpdated(function (Set $set, $state) {
                             if ($state) {
                                 $user = \App\Models\User::find($state);
                                 if ($user) {
-                                    $set('client_name', $user->full_name);
+                                    $set('client_name', $user->name);
                                     $set('client_email', $user->email);
                                 }
                             }
@@ -75,6 +77,7 @@ class InvoiceResource extends Resource
                     Forms\Components\TextInput::make('client_province')->label('Provincia')->maxLength(2),
                     Forms\Components\TextInput::make('client_postal_code')->label('CAP'),
                 ])->columns(2),
+
             Section::make('Date e Pagamento')
                 ->schema([
                     Forms\Components\DatePicker::make('issue_date')->label('Data Emissione')->required()->default(now()),
@@ -82,22 +85,14 @@ class InvoiceResource extends Resource
                     Forms\Components\DatePicker::make('paid_date')->label('Data Pagamento'),
                     Forms\Components\Select::make('payment_method')->label('Metodo Pagamento')
                         ->options([
-                            'credit_card' => 'Carta di Credito',
-                            'paypal' => 'PayPal',
-                            'bank_transfer' => 'Bonifico Bancario',
-                            'cash' => 'Contanti',
-                            'other' => 'Altro',
+                            'credit_card'    => 'Carta di Credito',
+                            'paypal'         => 'PayPal',
+                            'bank_transfer'  => 'Bonifico Bancario',
+                            'cash'           => 'Contanti',
+                            'other'          => 'Altro',
                         ]),
                 ])->columns(2),
-            Section::make('Fatturazione Ricorrente')
-                ->schema([
-                    Forms\Components\Toggle::make('is_recurring')->label('Fattura Ricorrente')->live(),
-                    Forms\Components\Select::make('recurring_interval')->label('Intervallo')
-                        ->options(['monthly' => 'Mensile', 'quarterly' => 'Trimestrale', 'yearly' => 'Annuale'])
-                        ->visible(fn (Get $get) => $get('is_recurring')),
-                    Forms\Components\DatePicker::make('next_recurring_date')->label('Prossima Emissione')
-                        ->visible(fn (Get $get) => $get('is_recurring')),
-                ])->columns(3),
+
             Section::make('Voci Fattura')
                 ->schema([
                     Forms\Components\Repeater::make('items')
@@ -127,19 +122,20 @@ class InvoiceResource extends Resource
                         ->addActionLabel('Aggiungi Voce')
                         ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
                             $subtotal = $data['quantity'] * $data['unit_price'] * (1 - ($data['discount_percentage'] ?? 0) / 100);
-                            $data['subtotal'] = $subtotal;
+                            $data['subtotal']   = $subtotal;
                             $data['tax_amount'] = $subtotal * ($data['vat_rate'] / 100);
-                            $data['total'] = $subtotal + $data['tax_amount'];
+                            $data['total']      = $subtotal + $data['tax_amount'];
                             return $data;
                         })
                         ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
                             $subtotal = $data['quantity'] * $data['unit_price'] * (1 - ($data['discount_percentage'] ?? 0) / 100);
-                            $data['subtotal'] = $subtotal;
+                            $data['subtotal']   = $subtotal;
                             $data['tax_amount'] = $subtotal * ($data['vat_rate'] / 100);
-                            $data['total'] = $subtotal + $data['tax_amount'];
+                            $data['total']      = $subtotal + $data['tax_amount'];
                             return $data;
                         }),
                 ]),
+
             Section::make('Note')
                 ->schema([
                     Forms\Components\TextInput::make('discount_amount')->label('Sconto Globale')->numeric()->prefix('€')->default(0),
@@ -152,40 +148,47 @@ class InvoiceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('invoice_number')->label('N. Fattura')->searchable()->sortable()->copyable(),
+                Tables\Columns\TextColumn::make('invoice_number')
+                    ->label('N. Fattura')->searchable()->sortable()->copyable(),
                 Tables\Columns\TextColumn::make('type')->label('Tipo')
                     ->badge()
-                    ->color(fn($state) => $state === 'invoice' ? 'primary' : 'warning')
+                    ->color(fn ($state) => $state === 'invoice' ? 'primary' : 'warning')
                     ->formatStateUsing(fn (string $state) => $state === 'invoice' ? 'Fattura' : 'Nota di Credito'),
-                Tables\Columns\TextColumn::make('client_name')->label('Cliente')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('client_name')
+                    ->label('Cliente')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('status')->label('Stato')
                     ->badge()
-                    ->color(fn($state) => match($state) {
-                        'draft' => 'gray',
-                        'sent' => 'info',
-                        'paid' => 'success',
-                        'overdue' => 'danger',
+                    ->color(fn ($state) => match ($state) {
+                        'draft'     => 'gray',
+                        'sent'      => 'info',
+                        'paid'      => 'success',
+                        'overdue'   => 'danger',
                         'cancelled' => 'warning',
-                        default => 'gray'
+                        default     => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state) => match($state) {
-                        'draft' => 'Bozza', 'sent' => 'Inviata', 'paid' => 'Pagata',
-                        'overdue' => 'Scaduta', 'cancelled' => 'Annullata', default => $state,
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'draft'     => 'Bozza',
+                        'sent'      => 'Inviata',
+                        'paid'      => 'Pagata',
+                        'overdue'   => 'Scaduta',
+                        'cancelled' => 'Annullata',
+                        default     => $state,
                     }),
                 Tables\Columns\TextColumn::make('total')->label('Totale')->money('EUR')->sortable(),
                 Tables\Columns\TextColumn::make('issue_date')->label('Emissione')->date('d/m/Y')->sortable(),
                 Tables\Columns\TextColumn::make('due_date')->label('Scadenza')->date('d/m/Y')->sortable(),
-                Tables\Columns\IconColumn::make('is_recurring')->label('Ricc.')->boolean()->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Stato')
                     ->options([
-                        'draft' => 'Bozza', 'sent' => 'Inviata', 'paid' => 'Pagata',
-                        'overdue' => 'Scaduta', 'cancelled' => 'Annullata',
+                        'draft'     => 'Bozza',
+                        'sent'      => 'Inviata',
+                        'paid'      => 'Pagata',
+                        'overdue'   => 'Scaduta',
+                        'cancelled' => 'Annullata',
                     ]),
                 Tables\Filters\SelectFilter::make('type')->label('Tipo')
                     ->options(['invoice' => 'Fattura', 'credit_note' => 'Nota di Credito']),
-                Tables\Filters\TernaryFilter::make('is_recurring')->label('Ricorrenti'),
             ])
             ->recordActions([
                 Action::make('download_pdf')
@@ -216,11 +219,10 @@ class InvoiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInvoices::route('/'),
+            'index'  => Pages\ListInvoices::route('/'),
             'create' => Pages\CreateInvoice::route('/create'),
-            'edit' => Pages\EditInvoice::route('/{record}/edit'),
-            'view' => Pages\ViewInvoice::route('/{record}'),
-            'recurring' => Pages\RecurringInvoices::route('/recurring'),
+            'edit'   => Pages\EditInvoice::route('/{record}/edit'),
+            'view'   => Pages\ViewInvoice::route('/{record}'),
         ];
     }
 

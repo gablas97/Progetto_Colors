@@ -72,21 +72,53 @@ class ProductVariant extends Model
         return $this->product->name . ' - ' . $this->name;
     }
 
-    public function decreaseStock(int $quantity, string $reason = 'order', ?Order $order = null, ?User $user = null): void
-    {
+    public function decreaseStock(
+        int $quantity,
+        string $type = 'manual_unload',
+        ?string $reason = null,
+        ?int $referenceId = null,
+        ?string $referenceType = null
+    ): void {
         $before = $this->stock_quantity;
         $this->decrement('stock_quantity', $quantity);
         $after = $this->fresh()->stock_quantity;
-        
-        StockLog::logChange(null, $this, $before, $after, $reason, $order, $user);
+
+        StockLog::create([
+            'product_id'          => $this->product_id,
+            'product_variant_id'  => $this->id,
+            'type'                => $type,
+            'quantity'            => $quantity,
+            'quantity_before'     => $before,
+            'quantity_after'      => $after,
+            'reason'              => $reason,
+            'reference_id'        => $referenceId,
+            'reference_type'      => $referenceType,
+            'user_id'             => auth()->id(),
+        ]);
     }
 
-    public function increaseStock(int $quantity, string $reason = 'adjustment', ?Order $order = null, ?User $user = null): void
-    {
+    public function increaseStock(
+        int $quantity,
+        string $type = 'manual_load',
+        ?string $reason = null,
+        ?int $referenceId = null,
+        ?string $referenceType = null
+    ): void {
         $before = $this->stock_quantity;
         $this->increment('stock_quantity', $quantity);
         $after = $this->fresh()->stock_quantity;
-        
-        StockLog::logChange(null, $this, $before, $after, $reason, $order, $user);
+
+        StockLog::create([
+            'product_id'          => $this->product_id,
+            'product_variant_id'  => $this->id,
+            'type'                => $type,
+            'quantity'            => $quantity,
+            'quantity_before'     => $before,
+            'quantity_after'      => $after,
+            'reason'              => $reason,
+            'reference_id'        => $referenceId,
+            'reference_type'      => $referenceType,
+            'user_id'             => auth()->id(),
+        ]);
     }
 }

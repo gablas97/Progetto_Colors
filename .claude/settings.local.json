@@ -5,7 +5,9 @@
       "Bash(docker compose restart:*)",
       "Bash(curl:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(composer dump-autoload:*)",
+      "Bash(php artisan:*)"
     ]
   }
 }

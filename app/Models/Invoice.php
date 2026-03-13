@@ -37,34 +37,29 @@ class Invoice extends Model
         'issue_date',
         'due_date',
         'paid_date',
-        'is_recurring',
-        'recurring_interval',
-        'next_recurring_date',
-        'parent_invoice_id',
         'notes',
         'created_by',
     ];
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
+        'subtotal'        => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'total' => 'decimal:2',
-        'issue_date' => 'date',
-        'due_date' => 'date',
-        'paid_date' => 'date',
-        'next_recurring_date' => 'date',
-        'is_recurring' => 'boolean',
+        'tax_amount'      => 'decimal:2',
+        'total'           => 'decimal:2',
+        'issue_date'      => 'date',
+        'due_date'        => 'date',
+        'paid_date'       => 'date',
     ];
 
     protected static function boot(): void
     {
         parent::boot();
+
         static::creating(function ($invoice) {
             if (empty($invoice->invoice_number)) {
-                $year = now()->format('Y');
+                $year   = now()->format('Y');
                 $prefix = $invoice->type === 'credit_note' ? 'NC' : 'FAT';
-                $last = static::withTrashed()
+                $last   = static::withTrashed()
                     ->where('invoice_number', 'like', "{$prefix}-{$year}-%")
                     ->count();
                 $invoice->invoice_number = sprintf("{$prefix}-%s-%05d", $year, $last + 1);
@@ -87,16 +82,6 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
-    public function parentInvoice(): BelongsTo
-    {
-        return $this->belongsTo(Invoice::class, 'parent_invoice_id');
-    }
-
-    public function childInvoices(): HasMany
-    {
-        return $this->hasMany(Invoice::class, 'parent_invoice_id');
-    }
-
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -105,8 +90,8 @@ class Invoice extends Model
     public function markAsPaid(?string $paymentMethod = null): void
     {
         $this->update([
-            'status' => 'paid',
-            'paid_date' => now(),
+            'status'         => 'paid',
+            'paid_date'      => now(),
             'payment_method' => $paymentMethod ?? $this->payment_method,
         ]);
     }
@@ -120,9 +105,9 @@ class Invoice extends Model
 
     public function recalculateTotals(): void
     {
-        $subtotal = $this->items->sum('subtotal');
+        $subtotal  = $this->items->sum('subtotal');
         $taxAmount = $this->items->sum('tax_amount');
-        $total = $subtotal + $taxAmount - $this->discount_amount;
+        $total     = $subtotal + $taxAmount - $this->discount_amount;
 
         $this->update(compact('subtotal', 'tax_amount', 'total'));
     }
@@ -130,11 +115,6 @@ class Invoice extends Model
     public function scopeByStatus($query, string $status)
     {
         return $query->where('status', $status);
-    }
-
-    public function scopeRecurring($query)
-    {
-        return $query->where('is_recurring', true);
     }
 
     public function scopeOverdue($query)
@@ -146,12 +126,12 @@ class Invoice extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'draft' => 'Bozza',
-            'sent' => 'Inviata',
-            'paid' => 'Pagata',
-            'overdue' => 'Scaduta',
+            'draft'     => 'Bozza',
+            'sent'      => 'Inviata',
+            'paid'      => 'Pagata',
+            'overdue'   => 'Scaduta',
             'cancelled' => 'Annullata',
-            default => $this->status,
+            default     => $this->status,
         };
     }
 }

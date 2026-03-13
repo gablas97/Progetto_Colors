@@ -67,20 +67,12 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
-                NavigationGroup::make('Generale'),
-                NavigationGroup::make('Agenda'),
-                NavigationGroup::make('Ordini'),
-                NavigationGroup::make('Gestione Prodotti'),
+                NavigationGroup::make('Catalogo'),
+                NavigationGroup::make('Vendite'),
+                NavigationGroup::make('Fatturazione'),
                 NavigationGroup::make('Magazzino'),
                 NavigationGroup::make('Fornitori'),
-                NavigationGroup::make('Clienti e Fedeltà'),
-                NavigationGroup::make('Preventivi'),
-                NavigationGroup::make('Fatturazione'),
-                NavigationGroup::make('DDT'),
-                NavigationGroup::make('Report e Analytics'),
-                NavigationGroup::make('Marketing'),
-                NavigationGroup::make('Vendite'),
-                NavigationGroup::make('Impostazioni'),
+                NavigationGroup::make('Clienti'),
             ])
             ->collapsibleNavigationGroups(false);
     }

@@ -20,7 +20,7 @@ class CustomerResource extends Resource
 {
     protected static ?string $model = User::class;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
-    protected static string|UnitEnum|null $navigationGroup = 'Clienti e Fedeltà';
+    protected static string|UnitEnum|null $navigationGroup = 'Clienti';
     protected static ?string $navigationLabel = 'Clienti';
     protected static ?string $modelLabel = 'Cliente';
     protected static ?string $pluralModelLabel = 'Clienti';

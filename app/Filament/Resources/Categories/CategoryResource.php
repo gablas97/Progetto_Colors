@@ -36,7 +36,7 @@ class CategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-folder';
     
-    protected static string|UnitEnum|null $navigationGroup = 'Gestione Prodotti';
+    protected static string|UnitEnum|null $navigationGroup = 'Catalogo';
 
     protected static ?int $navigationSort = 3;
 

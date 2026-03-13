@@ -111,11 +111,6 @@ class Order extends Model
         return $this->hasMany(TransportDocument::class);
     }
 
-    public function warehouseMovements(): HasMany
-    {
-        return $this->hasMany(WarehouseMovement::class);
-    }
-
     public function scopeActive($query)
     {
         return $query->whereNotIn('status', ['delivered', 'cancelled']);
@@ -220,8 +215,30 @@ class Order extends Model
 
     public function markAsShipped(): void
     {
+        if ($this->status !== 'processing') return;
+
+        foreach ($this->items as $item) {
+            if ($item->product_variant_id) {
+                $item->productVariant?->decreaseStock(
+                    $item->quantity,
+                    'order_fulfilled',
+                    "Ordine {$this->order_number}",
+                    $this->id,
+                    'order'
+                );
+            } else {
+                $item->product?->decreaseStock(
+                    $item->quantity,
+                    'order_fulfilled',
+                    "Ordine {$this->order_number}",
+                    $this->id,
+                    'order'
+                );
+            }
+        }
+
         $this->update([
-            'status' => 'shipped',
+            'status'     => 'shipped',
             'shipped_at' => now(),
         ]);
     }
@@ -229,25 +246,38 @@ class Order extends Model
     public function markAsDelivered(): void
     {
         $this->update([
-            'status' => 'delivered',
+            'status'       => 'delivered',
             'delivered_at' => now(),
         ]);
     }
 
     public function cancel(): void
     {
-        $this->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-        ]);
-        
-        // Ripristina stock
+        if (!$this->canBeCancelled()) return;
+
         foreach ($this->items as $item) {
             if ($item->product_variant_id) {
-                $item->productVariant?->increaseStock($item->quantity);
+                $item->productVariant?->increaseStock(
+                    $item->quantity,
+                    'return',
+                    "Ordine annullato {$this->order_number}",
+                    $this->id,
+                    'order'
+                );
             } else {
-                $item->product?->increaseStock($item->quantity);
+                $item->product?->increaseStock(
+                    $item->quantity,
+                    'return',
+                    "Ordine annullato {$this->order_number}",
+                    $this->id,
+                    'order'
+                );
             }
         }
+
+        $this->update([
+            'status'       => 'cancelled',
+            'cancelled_at' => now(),
+        ]);
     }
 }

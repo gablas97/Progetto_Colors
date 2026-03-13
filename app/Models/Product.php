@@ -65,13 +65,13 @@ class Product extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($product) {
             if (empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
             }
         });
-        
+
         static::updating(function ($product) {
             if ($product->isDirty('name') && empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
@@ -83,28 +83,6 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
-    }
-
-    public function warehouseMovements(): HasMany
-    {
-        return $this->hasMany(WarehouseMovement::class);
-    }
-
-    public function promotions(): BelongsToMany
-    {
-        return $this->belongsToMany(Promotion::class, 'promotion_product');
-    }
-
-    public function getMarginAttribute(): ?float
-    {
-        if (!$this->cost || $this->cost == 0) return null;
-        return round((($this->price - $this->cost) / $this->price) * 100, 2);
-    }
-
-    public function getMarginAmountAttribute(): ?float
-    {
-        if (!$this->cost) return null;
-        return round($this->price - $this->cost, 2);
     }
 
     public function categories(): BelongsToMany
@@ -205,12 +183,23 @@ class Product extends Model
     }
 
     // Helpers
+    public function getMarginAttribute(): ?float
+    {
+        if (!$this->cost || $this->cost == 0) return null;
+        return round((($this->price - $this->cost) / $this->price) * 100, 2);
+    }
+
+    public function getMarginAmountAttribute(): ?float
+    {
+        if (!$this->cost) return null;
+        return round($this->price - $this->cost, 2);
+    }
+
     public function isInStock(): bool
     {
         if (!$this->manage_stock) {
             return true;
         }
-        
         return $this->stock_quantity > 0;
     }
 
@@ -219,7 +208,6 @@ class Product extends Model
         if (!$this->manage_stock) {
             return false;
         }
-        
         return $this->stock_quantity > 0 && $this->stock_quantity <= $this->low_stock_threshold;
     }
 
@@ -233,7 +221,6 @@ class Product extends Model
         if (!$this->hasDiscount()) {
             return null;
         }
-        
         return round((($this->compare_at_price - $this->price) / $this->compare_at_price) * 100);
     }
 
@@ -242,35 +229,61 @@ class Product extends Model
         return $this->price * (1 + ($this->vat_rate / 100));
     }
 
-    public function decreaseStock(int $quantity, string $reason = 'order', ?Order $order = null, ?User $user = null): void
-    {
-        if ($this->manage_stock) {
-            $before = $this->stock_quantity;
-            $this->decrement('stock_quantity', $quantity);
-            $after = $this->fresh()->stock_quantity;
-            
-            // Log cambio stock
-            StockLog::logChange($this, null, $before, $after, $reason, $order, $user);
-        }
+    public function decreaseStock(
+        int $quantity,
+        string $type = 'manual_unload',
+        ?string $reason = null,
+        ?int $referenceId = null,
+        ?string $referenceType = null
+    ): void {
+        if (!$this->manage_stock) return;
+
+        $before = $this->stock_quantity;
+        $this->decrement('stock_quantity', $quantity);
+        $after = $this->fresh()->stock_quantity;
+
+        StockLog::create([
+            'product_id'      => $this->id,
+            'type'            => $type,
+            'quantity'        => $quantity,
+            'quantity_before' => $before,
+            'quantity_after'  => $after,
+            'reason'          => $reason,
+            'reference_id'    => $referenceId,
+            'reference_type'  => $referenceType,
+            'user_id'         => auth()->id(),
+        ]);
     }
 
-    public function increaseStock(int $quantity, string $reason = 'adjustment', ?Order $order = null, ?User $user = null): void
-    {
-        if ($this->manage_stock) {
-            $before = $this->stock_quantity;
-            $this->increment('stock_quantity', $quantity);
-            $after = $this->fresh()->stock_quantity;
-            
-            // Log cambio stock
-            StockLog::logChange($this, null, $before, $after, $reason, $order, $user);
-        }
+    public function increaseStock(
+        int $quantity,
+        string $type = 'manual_load',
+        ?string $reason = null,
+        ?int $referenceId = null,
+        ?string $referenceType = null
+    ): void {
+        if (!$this->manage_stock) return;
+
+        $before = $this->stock_quantity;
+        $this->increment('stock_quantity', $quantity);
+        $after = $this->fresh()->stock_quantity;
+
+        StockLog::create([
+            'product_id'      => $this->id,
+            'type'            => $type,
+            'quantity'        => $quantity,
+            'quantity_before' => $before,
+            'quantity_after'  => $after,
+            'reason'          => $reason,
+            'reference_id'    => $referenceId,
+            'reference_type'  => $referenceType,
+            'user_id'         => auth()->id(),
+        ]);
     }
 
     public function incrementViews(): void
     {
         $this->increment('views_count');
-        
-        // Invalida cache se usi caching
         Cache::forget("product_{$this->id}_details");
     }
 
@@ -282,10 +295,10 @@ class Product extends Model
     public function updateRatings(): void
     {
         $approved = $this->reviews()->approved();
-        
+
         $this->update([
             'average_rating' => $approved->avg('rating') ?? 0,
-            'reviews_count' => $approved->count(),
+            'reviews_count'  => $approved->count(),
         ]);
     }
 
@@ -294,7 +307,7 @@ class Product extends Model
         return Cache::remember(
             "product_{$this->id}_reviews_count",
             3600,
-            fn() => $this->reviews()->approved()->count()
+            fn () => $this->reviews()->approved()->count()
         );
     }
 }

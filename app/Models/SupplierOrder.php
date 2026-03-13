@@ -27,11 +27,11 @@ class SupplierOrder extends Model
 
     protected $casts = [
         'expected_delivery_date' => 'date',
-        'received_date' => 'date',
-        'subtotal' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'shipping_cost' => 'decimal:2',
-        'total' => 'decimal:2',
+        'received_date'          => 'date',
+        'subtotal'               => 'decimal:2',
+        'tax_amount'             => 'decimal:2',
+        'shipping_cost'          => 'decimal:2',
+        'total'                  => 'decimal:2',
     ];
 
     protected static function boot(): void
@@ -62,19 +62,44 @@ class SupplierOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function warehouseMovements(): HasMany
-    {
-        return $this->hasMany(WarehouseMovement::class);
-    }
-
     public function recalculateTotals(): void
     {
         $subtotal = $this->items->sum('total_price');
         $taxAmount = $subtotal * 0.22;
         $this->update([
-            'subtotal' => $subtotal,
+            'subtotal'   => $subtotal,
             'tax_amount' => $taxAmount,
-            'total' => $subtotal + $taxAmount + $this->shipping_cost,
+            'total'      => $subtotal + $taxAmount + $this->shipping_cost,
+        ]);
+    }
+
+    public function markAsReceived(): void
+    {
+        if ($this->status !== 'ordered' && $this->status !== 'confirmed') return;
+
+        foreach ($this->items as $item) {
+            if ($item->product_variant_id) {
+                $item->productVariant?->increaseStock(
+                    $item->quantity_ordered,
+                    'supplier_order_received',
+                    "Ordine fornitore {$this->order_number}",
+                    $this->id,
+                    'supplier_order'
+                );
+            } else {
+                $item->product?->increaseStock(
+                    $item->quantity_ordered,
+                    'supplier_order_received',
+                    "Ordine fornitore {$this->order_number}",
+                    $this->id,
+                    'supplier_order'
+                );
+            }
+        }
+
+        $this->update([
+            'status'        => 'received',
+            'received_date' => now()->toDateString(),
         ]);
     }
 

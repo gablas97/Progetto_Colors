@@ -42,12 +42,6 @@ return new class extends Migration
             $table->date('due_date')->nullable();
             $table->date('paid_date')->nullable();
 
-            // Ricorrenza
-            $table->boolean('is_recurring')->default(false);
-            $table->enum('recurring_interval', ['monthly', 'quarterly', 'yearly'])->nullable();
-            $table->date('next_recurring_date')->nullable();
-            $table->foreignId('parent_invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
-
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
