@@ -6,6 +6,7 @@ use App\Filament\Exports\OrderExporter;
 use App\Filament\Resources\Orders\Pages\CreateOrder;
 use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Filament\Resources\Orders\Pages\ListOrders;
+use App\Filament\Resources\Orders\Pages\ViewOrder;
 use App\Models\Order;
 use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -323,6 +324,7 @@ class OrderResource extends Resource
         return [
             'index' => ListOrders::route('/'),
             'create' => CreateOrder::route('/create'),
+            'view' => ViewOrder::route('/{record}'),
             'edit' => EditOrder::route('/{record}/edit'),
         ];
     }

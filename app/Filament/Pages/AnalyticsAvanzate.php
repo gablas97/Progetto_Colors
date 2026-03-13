@@ -18,7 +18,7 @@ class AnalyticsAvanzate extends Page
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
     protected static ?string $navigationLabel = 'Analytics Avanzate';
     protected static string|UnitEnum|null $navigationGroup = 'Generale';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
     protected static ?string $title = 'Analytics Avanzate';
     protected string $view = 'filament.pages.analytics-avanzate';
 

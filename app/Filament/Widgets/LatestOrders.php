@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Order;
+use App\Filament\Resources\Orders\OrderResource;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Widgets\TableWidget;
@@ -95,7 +96,7 @@ class LatestOrders extends TableWidget
                 Action::make('view')
                     ->label('Visualizza')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Order $record): string => route('string $view', $record)),
+                    ->url(fn (Order $record): string => OrderResource::getUrl('view', ['record' => $record])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
