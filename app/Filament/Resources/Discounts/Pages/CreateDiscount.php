@@ -10,6 +10,8 @@ class CreateDiscount extends CreateRecord
 {
     protected static string $resource = DiscountResource::class;
 
+    protected static bool $canCreateAnother = false;
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
@@ -22,9 +24,12 @@ class CreateDiscount extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Converte il codice in maiuscolo
         if (!empty($data['code'])) {
             $data['code'] = strtoupper(Str::slug($data['code'], ''));
+        }
+
+        if (($data['type'] ?? null) === 'shipping') {
+            $data['value'] = 0;
         }
 
         return $data;

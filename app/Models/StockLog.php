@@ -18,13 +18,26 @@ class StockLog extends Model
         'reference_id',
         'reference_type',
         'user_id',
+        'cancelled_at',
+        'cancelled_by',
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity'       => 'integer',
         'quantity_before' => 'integer',
         'quantity_after' => 'integer',
+        'cancelled_at'   => 'datetime',
     ];
+
+    public function isCancelled(): bool
+    {
+        return $this->cancelled_at !== null;
+    }
+
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
 
     public function product(): BelongsTo
     {

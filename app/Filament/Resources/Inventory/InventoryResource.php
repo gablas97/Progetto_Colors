@@ -2,15 +2,21 @@
 
 namespace App\Filament\Resources\Inventory;
 
+use App\Exports\InventoryExporter;
 use App\Filament\Resources\Inventory\Pages;
 use App\Models\Product;
 use BackedEnum;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use UnitEnum;
 
 class InventoryResource extends Resource
@@ -27,9 +33,73 @@ class InventoryResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Inventario';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema->schema([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Section::make('Prodotto')
+                ->schema([
+                    TextEntry::make('sku')
+                        ->label('SKU')
+                        ->copyable()
+                        ->placeholder('—'),
+                    TextEntry::make('name')
+                        ->label('Nome Prodotto'),
+                    TextEntry::make('brand.name')
+                        ->label('Brand')
+                        ->placeholder('—'),
+                    TextEntry::make('categories.name')
+                        ->label('Categorie')
+                        ->badge()
+                        ->separator(','),
+                ])->columns(2),
+
+            Section::make('Stock')
+                ->schema([
+                    TextEntry::make('stock_quantity')
+                        ->label('Giacenza Attuale')
+                        ->badge()
+                        ->color(fn (Product $record): string => match (true) {
+                            $record->stock_quantity <= 0                            => 'danger',
+                            $record->stock_quantity <= $record->low_stock_threshold => 'warning',
+                            default                                                 => 'success',
+                        })
+                        ->formatStateUsing(fn (Product $record): string => $record->stock_quantity . ' pz'),
+
+                    TextEntry::make('low_stock_threshold')
+                        ->label('Soglia Riordino')
+                        ->formatStateUsing(fn ($state): string => $state . ' pz'),
+
+                    TextEntry::make('price')
+                        ->label('Prezzo di Vendita')
+                        ->money('EUR'),
+
+                    TextEntry::make('cost')
+                        ->label('Costo di Acquisto')
+                        ->money('EUR')
+                        ->placeholder('—'),
+                ])->columns(2),
+
+            Section::make('Valore Stock')
+                ->schema([
+                    TextEntry::make('stock_value_calculated')
+                        ->label('Valore a Prezzo di Vendita')
+                        ->getStateUsing(fn (Product $record): string =>
+                            number_format($record->stock_quantity * $record->price, 2, ',', '.') . ' €'
+                        ),
+                    TextEntry::make('stock_cost_calculated')
+                        ->label('Valore a Costo')
+                        ->getStateUsing(fn (Product $record): string =>
+                            $record->cost
+                                ? number_format($record->stock_quantity * $record->cost, 2, ',', '.') . ' €'
+                                : '—'
+                        ),
+                ])->columns(2),
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -47,18 +117,23 @@ class InventoryResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->weight('medium'),
+                    ->copyMessage('SKU copiato!')
+                    ->tooltip('Clicca per copiare')
+                    ->weight('medium')
+                    ->toggleable(),
 
                 Tables\Columns\ImageColumn::make('main_image')
                     ->label('')
                     ->square()
-                    ->size(40),
+                    ->imageSize(40)
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Prodotto')
                     ->searchable()
                     ->sortable()
                     ->limit(35)
+                    ->toggleable()
                     ->description(fn (Product $record) => $record->brand?->name),
 
                 Tables\Columns\TextColumn::make('categories.name')
@@ -80,7 +155,8 @@ class InventoryResource extends Resource
                         $record->stock_quantity . ' pz'
                         . ($record->stock_quantity <= $record->low_stock_threshold && $record->stock_quantity > 0 ? ' ⚠' : '')
                         . ($record->stock_quantity <= 0 ? ' ✕' : '')
-                    ),
+                    )
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('low_stock_threshold')
                     ->label('Soglia')
@@ -93,15 +169,15 @@ class InventoryResource extends Resource
                         $query->orderByRaw("stock_quantity * COALESCE(cost, price) {$direction}")
                     )
                     ->getStateUsing(fn (Product $record) =>
-                        number_format($record->stock_quantity * ($record->cost ?? $record->price), 2) . ' €'
-                    )
-                    ->description(fn (Product $record) =>
-                        'Costo: ' . number_format($record->cost ?? 0, 2) . ' €'
+                        number_format($record->stock_quantity * ($record->price), 2, ',', '.') . ' €'
                     )
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('Prezzo')
+                    ->description(fn (Product $record) =>
+                        'Costo: ' . number_format($record->cost ?? '—', 2, ',', '.') . ' €'
+                    )
                     ->money('EUR')
                     ->sortable()
                     ->toggleable(),
@@ -129,13 +205,21 @@ class InventoryResource extends Resource
                     ->query(fn (Builder $query) => $query->outOfStock()),
             ])
             ->headerActions([
-                Tables\Actions\ExportAction::make()
+                Action::make('export')
                     ->label('Esporta Excel')
-                    ->icon('heroicon-o-arrow-down-tray'),
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->action(fn (): BinaryFileResponse => Excel::download(
+                        new InventoryExporter(),
+                        'INVENTARIO-' . now()->format('Y-m-d') . '.xlsx'
+                    )),
             ])
-            ->toolbarActions([
-                Tables\Actions\ExportBulkAction::make()
-                    ->label('Esporta Selezionati'),
+            ->recordUrl(null)
+            ->recordAction(ViewAction::class)
+            ->recordActions([
+                ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none'])
+                    ->modalWidth('3xl'),
             ])
             ->emptyStateHeading('Nessun prodotto con gestione stock attiva')
             ->emptyStateIcon('heroicon-o-clipboard-document-list');

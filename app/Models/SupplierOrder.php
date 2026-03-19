@@ -18,6 +18,7 @@ class SupplierOrder extends Model
         'expected_delivery_date',
         'received_date',
         'subtotal',
+        'tax_rate',
         'tax_amount',
         'shipping_cost',
         'total',
@@ -29,6 +30,7 @@ class SupplierOrder extends Model
         'expected_delivery_date' => 'date',
         'received_date'          => 'date',
         'subtotal'               => 'decimal:2',
+        'tax_rate'               => 'decimal:4',
         'tax_amount'             => 'decimal:2',
         'shipping_cost'          => 'decimal:2',
         'total'                  => 'decimal:2',
@@ -64,12 +66,13 @@ class SupplierOrder extends Model
 
     public function recalculateTotals(): void
     {
-        $subtotal = $this->items->sum('total_price');
-        $taxAmount = $subtotal * 0.22;
+        $subtotal  = $this->items->sum('total_price');
+        $taxRate   = $this->tax_rate ?? 0.22;
+        $taxAmount = $subtotal * $taxRate;
         $this->update([
             'subtotal'   => $subtotal,
             'tax_amount' => $taxAmount,
-            'total'      => $subtotal + $taxAmount + $this->shipping_cost,
+            'total'      => $subtotal + $taxAmount + ($this->shipping_cost ?? 0),
         ]);
     }
 
@@ -78,9 +81,10 @@ class SupplierOrder extends Model
         if ($this->status !== 'ordered' && $this->status !== 'confirmed') return;
 
         foreach ($this->items as $item) {
+            $qty = ($item->quantity_received > 0) ? $item->quantity_received : $item->quantity_ordered;
             if ($item->product_variant_id) {
                 $item->productVariant?->increaseStock(
-                    $item->quantity_ordered,
+                    $qty,
                     'supplier_order_received',
                     "Ordine fornitore {$this->order_number}",
                     $this->id,
@@ -88,7 +92,7 @@ class SupplierOrder extends Model
                 );
             } else {
                 $item->product?->increaseStock(
-                    $item->quantity_ordered,
+                    $qty,
                     'supplier_order_received',
                     "Ordine fornitore {$this->order_number}",
                     $this->id,

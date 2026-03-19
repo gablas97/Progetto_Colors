@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('stock_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('product_variant_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('product_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('product_variant_id')->nullable()->constrained()->cascadeOnDelete();
             $table->enum('type', [
                 'manual_load',              // Carico manuale admin
                 'manual_unload',            // Scarico manuale admin

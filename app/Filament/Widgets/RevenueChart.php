@@ -4,9 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Order;
 use Flowframe\Trend\Trend;
-use Filament\Support\RawJs;
 use Illuminate\Support\Carbon;
-use Flowframe\Trend\TrendValue;
 use Filament\Widgets\ChartWidget;
 
 class RevenueChart extends ChartWidget
@@ -22,8 +20,6 @@ class RevenueChart extends ChartWidget
     protected ?string $pollingInterval = null;
 
     public ?string $filter = 'month';
-
-    protected int $yMax;
 
     protected function getFilters(): ?array
     {
@@ -52,15 +48,11 @@ class RevenueChart extends ChartWidget
             ->{"per" . ucfirst($groupBy)}()
             ->sum('total');
 
-        $maxValue = $trend->max(fn (TrendValue $value) => $value->aggregate) ?? 0;
-
-        $this->yMax = $this->calculateYAxisMax($maxValue);
-
         return [
             'datasets' => [
                 [
                     'label' => 'Fatturato (€)',
-                    'data' => $trend->map(fn (TrendValue $value) => round($value->aggregate, 2)),
+                    'data' => $trend->map(fn ($value) => round($value->aggregate, 2)),
                     'borderColor' => 'rgb(16, 185, 129)',
                     'backgroundColor' => 'rgba(16, 185, 129, 0.15)',
                     'borderWidth' => 2,
@@ -68,23 +60,10 @@ class RevenueChart extends ChartWidget
                     'tension' => 0.3,
                 ],
             ],
-            'labels' => $trend->map(fn (TrendValue $value) =>
-                $this->formatLabel($value->date)
-            ),
+            'labels' => $trend->map(fn ($value) => $this->formatLabel($value->date)),
         ];
     }
 
-    protected function calculateYAxisMax(float $max): int
-    {
-        return match ($this->filter) {
-            'week' => max(100, ceil($max / 50) * 50),
-            'month' => max(300, ceil($max / 100) * 100),
-            'quarter' => max(600, ceil($max / 200) * 200),
-            'year' => max(1000, ceil($max / 500) * 500),
-            default => ceil($max / 100) * 100,
-        };
-    }
-    
     protected function currentQuarterRange(): array
     {
         $month = now()->month;
@@ -113,43 +92,4 @@ class RevenueChart extends ChartWidget
         return 'line';
     }
 
-    protected function getOptions(): array
-    {
-        return [
-            'plugins' => [
-                'legend' => [
-                    'display' => false,
-                ],
-                'tooltip' => [
-                    'callbacks' => [
-                        'label' => RawJs::make(<<<'JS'
-                            function(context) {
-                                const value = context.parsed.y || 0;
-                                return ' € ' + value.toFixed(2);
-                            }
-                        JS),
-                        'title' => RawJs::make(<<<'JS'
-                            function(context) {
-                                return context[0].label;
-                            }
-                        JS),
-                    ],
-                ],
-            ],
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'suggestedMax' => RawJs::make('meta.yMax'),
-                    'ticks' => [
-                        'callback' => RawJs::make(<<<'JS'
-                                function (value) {
-                                    return '€' + value;
-                                }
-                                JS
-                            ),
-                        ],
-                ],
-            ],
-        ];
-    }
 }

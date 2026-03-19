@@ -48,7 +48,7 @@ class User extends Authenticatable implements FilamentUser, HasName
 
     public function getFilamentName(): string
     {
-        return $this->first_name . ' ' . $this->last_name ?? $this->email;
+        return ($this->first_name . ' ' . $this->last_name) ?: $this->email;
     }
 
     // Relazioni
@@ -75,21 +75,6 @@ class User extends Authenticatable implements FilamentUser, HasName
     public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
-    }
-
-    public function loyaltyCard(): HasOne
-    {
-        return $this->hasOne(LoyaltyCard::class);
-    }
-
-    public function calendarEvents(): HasMany
-    {
-        return $this->hasMany(CalendarEvent::class);
-    }
-
-    public function quotes(): HasMany
-    {
-        return $this->hasMany(Quote::class);
     }
 
     public function invoices(): HasMany

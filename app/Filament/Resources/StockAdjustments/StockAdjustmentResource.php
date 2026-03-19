@@ -8,10 +8,13 @@ use App\Models\ProductVariant;
 use App\Models\StockLog;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ViewAction;
+use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -24,20 +27,20 @@ class StockAdjustmentResource extends Resource
 {
     protected static ?string $model = StockLog::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrows-up-down';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrows-right-left';
 
     protected static string|UnitEnum|null $navigationGroup = 'Magazzino';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $modelLabel = 'Rettifica Stock';
+    protected static ?string $modelLabel = 'Movimento Stock';
 
-    protected static ?string $pluralModelLabel = 'Rettifiche Stock';
+    protected static ?string $pluralModelLabel = 'Movimenti Stock';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Section::make('Rettifica Stock')
+            Section::make('Movimento Stock')
                 ->schema([
                     Forms\Components\Select::make('product_id')
                         ->label('Prodotto')
@@ -61,23 +64,25 @@ class StockAdjustmentResource extends Resource
                     Forms\Components\Radio::make('type')
                         ->label('Tipo Operazione')
                         ->options([
-                            'manual_load'   => 'Carico (aumenta stock)',
+                            'manual_load' => 'Carico (aumenta stock)',
                             'manual_unload' => 'Scarico (diminuisce stock)',
                         ])
                         ->required()
-                        ->inline(),
+                        ->inline()
+                        ->default('manual_load'),
 
                     Forms\Components\TextInput::make('quantity')
                         ->label('Quantità')
                         ->numeric()
                         ->integer()
                         ->minValue(1)
-                        ->required(),
+                        ->required()
+                        ->default(1),
 
                     Forms\Components\Textarea::make('reason')
                         ->label('Motivo')
                         ->rows(2)
-                        ->placeholder('Descrivi il motivo della rettifica...'),
+                        ->placeholder('Descrivi il motivo del movimento...'),
                 ])
                 ->columns(2),
         ]);
@@ -86,76 +91,108 @@ class StockAdjustmentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->query(StockLog::query()
-                ->whereIn('type', ['manual_load', 'manual_unload'])
-                ->with(['product', 'productVariant', 'user'])
-                ->latest()
-            )
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Data')
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipo')
                     ->badge()
                     ->formatStateUsing(fn (string $state) => match ($state) {
-                        'manual_load'   => 'Carico',
-                        'manual_unload' => 'Scarico',
+                        'manual_load' => 'Carico Manuale',
+                        'manual_unload' => 'Scarico Manuale',
+                        'order_fulfilled' => 'Ordine Evaso',
+                        'supplier_order_received' => 'Carico Fornitore',
+                        'return' => 'Reso',
                         default         => $state,
                     })
                     ->color(fn (string $state) => match ($state) {
-                        'manual_load'   => 'success',
-                        'manual_unload' => 'danger',
+                        'manual_load', 'supplier_order_received', 'return' => 'success',
+                        'manual_unload', 'order_fulfilled' => 'warning',
                         default         => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('product.name')
                     ->label('Prodotto')
                     ->searchable()
-                    ->limit(30),
+                    ->sortable()
+                    ->limit(30)
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('productVariant.name')
                     ->label('Variante')
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Qtà')
-                    ->formatStateUsing(fn (StockLog $record) =>
-                        ($record->type === 'manual_load' ? '+' : '-') . $record->quantity
+                    ->label('Quantità')
+                    ->numeric()
+                    ->alignCenter()
+                    ->color(fn ($record) => in_array($record->type, ['manual_load', 'supplier_order_received', 'return']) ? 'success' : 'warning')
+                    ->formatStateUsing(fn ($record) => 
+                        in_array($record->type, ['manual_load', 'supplier_order_received', 'return']) 
+                            ? '+' . $record->quantity 
+                            : '-' . $record->quantity
                     )
-                    ->color(fn (StockLog $record) =>
-                        $record->type === 'manual_load' ? 'success' : 'danger'
-                    ),
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('quantity_before')
                     ->label('Prima')
-                    ->toggleable(),
+                    ->numeric()
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('quantity_after')
                     ->label('Dopo')
+                    ->numeric()
+                    ->alignCenter()
                     ->badge()
-                    ->color(fn (StockLog $record) => $record->quantity_after <= 0 ? 'danger' : 'success'),
+                    ->color(fn (int $state): string => match (true) {
+                        $state === 0 => 'danger',
+                        $state <= 10 => 'warning',
+                        default => 'success',
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('reason')
                     ->label('Motivo')
                     ->limit(40)
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Operatore')
-                    ->placeholder('-')
-                    ->toggleable(),
+                    ->placeholder('Sistema')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('cancelled_at')
+                    ->label('Stato')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state ? 'Annullato' : 'Attivo')
+                    ->color(fn ($state) => $state ? 'danger' : 'success'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
-                    ->label('Tipo')
+                    ->label('Tipo Movimento')
                     ->options([
-                        'manual_load'   => 'Carico',
-                        'manual_unload' => 'Scarico',
+                        'manual_load' => 'Carico Manuale',
+                        'manual_unload' => 'Scarico Manuale',
+                        'order_fulfilled' => 'Ordine Evaso',
+                        'supplier_order_received' => 'Carico Fornitore',
+                        'return' => 'Reso',
                     ]),
+
+                Tables\Filters\SelectFilter::make('product_id')
+                ->label('Prodotto')
+                ->relationship('product', 'name')
+                ->searchable()
+                ->preload(),
 
                 Tables\Filters\Filter::make('created_at')
                     ->schema([
@@ -168,19 +205,200 @@ class StockAdjustmentResource extends Resource
                             ->when($data['until'], fn ($q, $v) => $q->whereDate('created_at', '<=', $v));
                     }),
             ])
+            ->recordUrl(null)
+            ->recordAction(ViewAction::class)
             ->recordActions([
+                ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none'])
+                    ->modalWidth('2xl'),
                 ActionGroup::make([
-                    DeleteAction::make(),
+                    Action::make('cancel_movement')
+                        ->label('Annulla movimento')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Annulla movimento')
+                        ->modalDescription('Lo stock verrà ripristinato automaticamente. Il movimento rimarrà visibile come "Annullato" per l\'audit trail.')
+                        ->visible(fn (StockLog $record) => ! $record->isCancelled())
+                        ->action(function (StockLog $record) {
+                            $loadTypes = ['manual_load', 'supplier_order_received', 'return'];
+                            $isLoad    = in_array($record->type, $loadTypes);
+
+                            // Ripristina lo stock
+                            if ($record->product_variant_id) {
+                                $target = $record->productVariant;
+                                if ($target) {
+                                    $isLoad
+                                        ? $target->decrement('stock_quantity', $record->quantity)
+                                        : $target->increment('stock_quantity', $record->quantity);
+
+                                    $stockAfter = $target->fresh()->stock_quantity;
+                                }
+                            } else {
+                                $target = $record->product;
+                                if ($target && $target->manage_stock) {
+                                    $isLoad
+                                        ? $target->decrement('stock_quantity', $record->quantity)
+                                        : $target->increment('stock_quantity', $record->quantity);
+
+                                    $stockAfter = $target->fresh()->stock_quantity;
+                                }
+                            }
+
+                            // Crea movimento inverso di tracciamento
+                            StockLog::create([
+                                'product_id'         => $record->product_id,
+                                'product_variant_id' => $record->product_variant_id,
+                                'type'               => $isLoad ? 'manual_unload' : 'manual_load',
+                                'quantity'           => $record->quantity,
+                                'quantity_before'    => $record->quantity_after,
+                                'quantity_after'     => $stockAfter ?? $record->quantity_before,
+                                'reason'             => 'Annullamento movimento #' . $record->id,
+                                'user_id'            => auth()->id(),
+                            ]);
+
+                            // Marca il movimento originale come annullato
+                            $record->update([
+                                'cancelled_at' => now(),
+                                'cancelled_by' => auth()->id(),
+                            ]);
+                        }),
                 ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    BulkAction::make('bulk_cancel')
+                        ->label('Annulla selezionati')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Annulla movimenti selezionati')
+                        ->modalDescription('Lo stock verrà ripristinato per ciascun movimento. I movimenti rimarranno visibili come "Annullati" per l\'audit trail.')
+                        ->action(function (Collection $records) {
+                            $loadTypes = ['manual_load', 'supplier_order_received', 'return'];
+
+                            foreach ($records as $record) {
+                                if ($record->isCancelled()) continue;
+
+                                $isLoad = in_array($record->type, $loadTypes);
+
+                                if ($record->product_variant_id) {
+                                    $target = $record->productVariant;
+                                    if ($target) {
+                                        $isLoad
+                                            ? $target->decrement('stock_quantity', $record->quantity)
+                                            : $target->increment('stock_quantity', $record->quantity);
+                                        $stockAfter = $target->fresh()->stock_quantity;
+                                    }
+                                } else {
+                                    $target = $record->product;
+                                    if ($target && $target->manage_stock) {
+                                        $isLoad
+                                            ? $target->decrement('stock_quantity', $record->quantity)
+                                            : $target->increment('stock_quantity', $record->quantity);
+                                        $stockAfter = $target->fresh()->stock_quantity;
+                                    }
+                                }
+
+                                StockLog::create([
+                                    'product_id'         => $record->product_id,
+                                    'product_variant_id' => $record->product_variant_id,
+                                    'type'               => $isLoad ? 'manual_unload' : 'manual_load',
+                                    'quantity'           => $record->quantity,
+                                    'quantity_before'    => $record->quantity_after,
+                                    'quantity_after'     => $stockAfter ?? $record->quantity_before,
+                                    'reason'             => 'Annullamento movimento #' . $record->id,
+                                    'user_id'            => auth()->id(),
+                                ]);
+
+                                $record->update([
+                                    'cancelled_at' => now(),
+                                    'cancelled_by' => auth()->id(),
+                                ]);
+                            }
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ])
-            ->emptyStateHeading('Nessuna rettifica')
-            ->emptyStateDescription('Usa il bottone "Nuova Rettifica" per caricare o scaricare stock manualmente.')
-            ->emptyStateIcon('heroicon-o-arrows-up-down');
+            ->emptyStateHeading('Nessun movimento')
+            ->emptyStateDescription('Usa il bottone "Nuovo Movimento" per caricare o scaricare stock manualmente.')
+            ->emptyStateIcon('heroicon-o-arrows-right-left');
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Section::make('Dettaglio Movimento')
+                ->schema([
+                    TextEntry::make('created_at')
+                        ->label('Data e Ora')
+                        ->dateTime('d/m/Y H:i'),
+
+                    TextEntry::make('type')
+                        ->label('Tipo')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state) => match ($state) {
+                            'manual_load'             => 'Carico Manuale',
+                            'manual_unload'           => 'Scarico Manuale',
+                            'order_fulfilled'         => 'Ordine Evaso',
+                            'supplier_order_received' => 'Carico Fornitore',
+                            'return'                  => 'Reso',
+                            default                   => $state,
+                        })
+                        ->color(fn (string $state) => match ($state) {
+                            'manual_load', 'supplier_order_received', 'return' => 'success',
+                            'manual_unload', 'order_fulfilled'                 => 'warning',
+                            default                                            => 'gray',
+                        }),
+
+                    TextEntry::make('product.name')
+                        ->label('Prodotto'),
+
+                    TextEntry::make('productVariant.name')
+                        ->label('Variante')
+                        ->placeholder('—'),
+
+                    TextEntry::make('quantity')
+                        ->label('Quantità')
+                        ->formatStateUsing(fn ($state, StockLog $record): string =>
+                            in_array($record->type, ['manual_load', 'supplier_order_received', 'return'])
+                                ? '+' . $state
+                                : '-' . $state
+                        )
+                        ->color(fn (StockLog $record): string =>
+                            in_array($record->type, ['manual_load', 'supplier_order_received', 'return'])
+                                ? 'success'
+                                : 'warning'
+                        )
+                        ->weight('bold'),
+
+                    TextEntry::make('user.name')
+                        ->label('Operatore')
+                        ->placeholder('Sistema'),
+                ])->columns(2),
+
+            Section::make('Stock')
+                ->schema([
+                    TextEntry::make('quantity_before')
+                        ->label('Stock Prima'),
+                    TextEntry::make('quantity_after')
+                        ->label('Stock Dopo')
+                        ->badge()
+                        ->color(fn ($state): string => match (true) {
+                            $state == 0  => 'danger',
+                            $state <= 10 => 'warning',
+                            default      => 'success',
+                        }),
+                ])->columns(2),
+
+            Section::make('Motivo')
+                ->schema([
+                    TextEntry::make('reason')
+                        ->label('')
+                        ->placeholder('Nessun motivo specificato')
+                        ->columnSpanFull(),
+                ])->collapsible()->collapsed(fn (StockLog $record) => !$record->reason),
+        ]);
     }
 
     public static function getPages(): array

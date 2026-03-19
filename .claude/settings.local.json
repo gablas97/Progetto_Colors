@@ -7,7 +7,12 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(composer dump-autoload:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(find /c/Users/accad/OneDrive/Desktop/GABRIELE/Works/Progetto_Colors/vendor/filament -name *.php -path */lang/* -path */it/*)",
+      "Bash(find /c/Users/accad/OneDrive/Desktop/GABRIELE/Works/Progetto_Colors/vendor/filament -name *.php -path */lang/en/*)",
+      "Bash(docker compose:*)",
+      "Bash(grep -l \"canCreateAnother\" c:/Users/accad/OneDrive/Desktop/GABRIELE/Works/Progetto_Colors/app/Filament/Resources/**/Pages/Create*.php)",
+      "Bash(docker exec:*)"
     ]
   }
 }

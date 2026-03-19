@@ -30,7 +30,7 @@ Thumbs.db
 # Docker stessi
 Dockerfile
 docker-compose*.yml
-docker/
+docker/nginx/
 
 # Test
 tests/

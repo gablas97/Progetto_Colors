@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\Product;
+use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -57,6 +58,10 @@ class StatsOverview extends StatsOverviewWidget
 
         $averageRating = Review::where('is_approved', true)->avg('rating');
 
+        $pendingOrders = Order::where('status', 'pending')->count();
+        $processingOrders = Order::where('status', 'processing')->count();
+        $ordersToHandle = $pendingOrders + $processingOrders;
+
         return [
             Stat::make('Fatturato Totale', '€' . number_format($totalRevenue, 2))
                 ->description('Per un totale di ' . number_format($totalOrders) . ' ordini')
@@ -87,6 +92,12 @@ class StatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-x-circle')
                 ->color($outOfStockProducts > 0 ? 'danger' : 'success')
                 ->url(route('filament.admin.resources.products.index', ['activeTab' => 'out_of_stock'])),
+
+            Stat::make('Ordini da Gestire', $ordersToHandle)
+                ->description("{$pendingOrders} in attesa · {$processingOrders} in elaborazione")
+                ->descriptionIcon('heroicon-m-clock')
+                ->color($ordersToHandle > 0 ? 'warning' : 'success')
+                ->url(route('filament.admin.resources.orders.index')),
         ];
     }
 }

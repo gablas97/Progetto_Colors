@@ -17,8 +17,10 @@ class EditProduct extends EditRecord
         return [
             DeleteAction::make()
                 ->label('Elimina prodotto'),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
+            ForceDeleteAction::make()
+                ->label('Elimina definitivamente'),
+            RestoreAction::make()
+                ->label('Ripristina'),
         ];
     }
 

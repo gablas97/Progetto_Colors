@@ -9,10 +9,17 @@ class CreateInvoice extends CreateRecord
 {
     protected static string $resource = InvoiceResource::class;
 
+    protected static bool $canCreateAnother = false;
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['created_by'] = auth()->id();
         return $data;
+    }
+
+    protected function getCreatedNotificationTitle(): ?string
+    {
+        return 'Fattura creata con successo';
     }
 
     protected function getRedirectUrl(): string

@@ -6,10 +6,21 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Discount extends Model
 {
     use HasFactory;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::saving(function ($discount) {
+            if ($discount->code) {
+                $discount->code = strtoupper($discount->code);
+            }
+        });
+    }
 
     protected $fillable = [
         'name',
@@ -38,6 +49,11 @@ class Discount extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class)->withTimestamps();
+    }
+
+    public function usages(): HasMany
+    {
+        return $this->hasMany(DiscountUsage::class);
     }
 
     // Scopes
@@ -83,13 +99,22 @@ class Discount extends Model
         return true;
     }
 
-    public function canApplyToOrder(float $orderAmount): bool
+    public function hasBeenUsedBy(int $userId): bool
+    {
+        return $this->usages()->where('user_id', $userId)->exists();
+    }
+
+    public function canApplyToOrder(float $orderAmount, ?int $userId = null): bool
     {
         if (!$this->isValid()) {
             return false;
         }
 
         if ($this->min_order_amount && $orderAmount < $this->min_order_amount) {
+            return false;
+        }
+
+        if ($userId !== null && $this->hasBeenUsedBy($userId)) {
             return false;
         }
 
@@ -107,14 +132,22 @@ class Discount extends Model
         }
 
         if ($this->type === 'shipping') {
-            return $this->value; // Sarà applicato alle spese di spedizione
+            return $amount; // Azzera le spese di spedizione
         }
 
         return 0;
     }
 
-    public function incrementUsage(): void
+    public function incrementUsage(?int $userId = null, ?int $orderId = null): void
     {
         $this->increment('usage_count');
+
+        if ($userId !== null) {
+            $this->usages()->create([
+                'user_id'  => $userId,
+                'order_id' => $orderId,
+                'used_at'  => now(),
+            ]);
+        }
     }
 }

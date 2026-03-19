@@ -12,7 +12,10 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -27,16 +30,16 @@ class DiscountResource extends Resource
     protected static ?string $model = Discount::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';
-    
+
     protected static string|UnitEnum|null $navigationGroup = 'Vendite';
-    
-    protected static ?int $navigationSort = 1;
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'Sconto';
-    
+
     protected static ?string $pluralModelLabel = 'Sconti';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
@@ -57,6 +60,8 @@ class DiscountResource extends Resource
 
                         Forms\Components\Select::make('type')
                             ->label('Tipo Sconto')
+                            ->placeholder('Seleziona il tipo')
+                            ->selectablePlaceholder(false)
                             ->options([
                                 'percentage' => 'Percentuale',
                                 'fixed' => 'Importo Fisso',
@@ -66,13 +71,9 @@ class DiscountResource extends Resource
                             ->live(),
 
                         Forms\Components\TextInput::make('value')
-                            ->label(fn (Get $get) => match ($get('type')) {
-                                'percentage' => 'Percentuale (%)',
-                                'fixed' => 'Importo (€)',
-                                'shipping' => 'Costo Spedizione (€)',
-                                default => 'Valore',
-                            })
-                            ->required()
+                            ->label(fn (Get $get) => $get('type') === 'percentage' ? 'Percentuale (%)' : 'Importo (€)')
+                            ->required(fn (Get $get) => $get('type') !== 'shipping')
+                            ->hidden(fn (Get $get) => $get('type') === 'shipping')
                             ->numeric()
                             ->suffix(fn (Get $get) => $get('type') === 'percentage' ? '%' : '€')
                             ->minValue(0)
@@ -133,6 +134,82 @@ class DiscountResource extends Resource
             ]);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                Section::make('Informazioni Sconto')
+                    ->schema([
+                        TextEntry::make('name')
+                            ->label('Nome Sconto'),
+
+                        TextEntry::make('code')
+                            ->label('Codice Coupon')
+                            ->badge()
+                            ->color('primary')
+                            ->copyable()
+                            ->placeholder('Sconto automatico'),
+
+                        TextEntry::make('type')
+                            ->label('Tipo')
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'percentage' => 'Percentuale',
+                                'fixed' => 'Importo Fisso',
+                                'shipping' => 'Spedizione Gratuita',
+                                default => $state,
+                            })
+                            ->badge()
+                            ->color('info'),
+
+                        TextEntry::make('value')
+                            ->label('Valore')
+                            ->formatStateUsing(fn (Discount $record): string => match ($record->type) {
+                                'percentage' => $record->value . '%',
+                                'shipping'   => '—',
+                                default      => '€ ' . number_format($record->value, 2, ',', '.'),
+                            })
+                            ->weight('bold'),
+
+                        TextEntry::make('min_order_amount')
+                            ->label('Importo Minimo Ordine')
+                            ->formatStateUsing(fn ($state): string => $state ? '€ ' . number_format($state, 2, ',', '.') : '—')
+                            ->placeholder('Nessun minimo'),
+                    ])
+                    ->columns(2),
+
+                Section::make('Limitazioni e Validità')
+                    ->schema([
+                        TextEntry::make('usage_count')
+                            ->label('Utilizzi')
+                            ->formatStateUsing(fn (Discount $record): string =>
+                                $record->usage_count . ($record->usage_limit ? ' / ' . $record->usage_limit : ' (illimitato)')
+                            )
+                            ->badge()
+                            ->color(fn (Discount $record): string =>
+                                $record->usage_limit && $record->usage_count >= $record->usage_limit ? 'danger' : 'success'
+                            ),
+
+                        IconEntry::make('is_active')
+                            ->label('Attivo')
+                            ->boolean(),
+
+                        TextEntry::make('starts_at')
+                            ->label('Data Inizio')
+                            ->dateTime('d/m/Y H:i')
+                            ->placeholder('Subito'),
+
+                        TextEntry::make('expires_at')
+                            ->label('Data Scadenza')
+                            ->dateTime('d/m/Y H:i')
+                            ->placeholder('Nessuna scadenza')
+                            ->color(fn ($state): string =>
+                                $state && now()->gt($state) ? 'danger' : 'gray'
+                            ),
+                    ])
+                    ->columns(2),
+            ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -159,32 +236,27 @@ class DiscountResource extends Resource
                         'fixed' => 'Fisso',
                         'shipping' => 'Spedizione',
                         default => 'N/A',
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'percentage' => 'gray',
-                        'fixed' => 'gray',
-                        'shipping' => 'gray',
-                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('value')
                     ->label('Valore')
-                    ->formatStateUsing(fn (Discount $record): string => 
-                        $record->type === 'percentage' 
-                            ? $record->value . '%' 
-                            : '€' . number_format($record->value, 2)
-                    )
-                    ->sortable(),
+                    ->formatStateUsing(fn (Discount $record): string => match ($record->type) {
+                        'percentage' => number_format($record->value, 2, ',', '.') . '%',
+                        'shipping'   => '—',
+                        default      => number_format($record->value, 2, ',', '.') . ' €',
+                    })
+                    ->sortable()
+                    ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('usage_count')
                     ->label('Utilizzi')
-                    ->formatStateUsing(fn (Discount $record): string => 
+                    ->formatStateUsing(fn (Discount $record): string =>
                         $record->usage_count . ($record->usage_limit ? ' / ' . $record->usage_limit : '')
                     )
                     ->badge()
-                    ->color(fn (Discount $record): string => 
-                        $record->usage_limit && $record->usage_count >= $record->usage_limit 
-                            ? 'danger' 
+                    ->color(fn (Discount $record): string =>
+                        $record->usage_limit && $record->usage_count >= $record->usage_limit
+                            ? 'danger'
                             : 'success'
                     )
                     ->alignCenter(),
@@ -194,16 +266,19 @@ class DiscountResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->placeholder('Mai')
                     ->sortable()
-                    ->color(fn ($state): string => 
+                    ->color(fn ($state): string =>
                         $state && now()->gt($state) ? 'danger' : 'gray'
                     ),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Attivo')
                     ->boolean()
-                    ->sortable(),
+                    ->sortable()
+                    ->alignCenter(),
             ])
             ->defaultSort('expires_at', 'asc')
+            ->recordUrl(null)
+            ->recordAction(ViewAction::class)
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Stato')
@@ -226,7 +301,7 @@ class DiscountResource extends Resource
 
                 Tables\Filters\Filter::make('active_valid')
                     ->label('Attivi e Validi')
-                    ->query(fn (Builder $query): Builder => 
+                    ->query(fn (Builder $query): Builder =>
                         $query->where('is_active', true)
                               ->where(function ($q) {
                                   $q->whereNull('expires_at')
@@ -235,16 +310,24 @@ class DiscountResource extends Resource
                     ),
             ])
             ->recordActions([
+                ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none'])
+                    ->modalWidth('5xl'),
                 ActionGroup::make([
                     EditAction::make(),
                     DeleteAction::make(),
-                    
+
                     Action::make('toggle_status')
                         ->label(fn (Discount $record) => $record->is_active ? 'Disattiva' : 'Attiva')
                         ->icon(fn (Discount $record) => $record->is_active ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                         ->color(fn (Discount $record) => $record->is_active ? 'danger' : 'success')
                         ->requiresConfirmation()
-                        ->action(fn (Discount $record) => $record->update(['is_active' => !$record->is_active])),
+                        ->modalHeading(fn (Discount $record) => $record->is_active ? 'Disattiva sconto' : 'Attiva sconto')
+                        ->modalDescription(fn (Discount $record) => $record->is_active
+                            ? 'Lo sconto non sarà più utilizzabile. Vuoi continuare?'
+                            : 'Lo sconto tornerà utilizzabile sul sito. Vuoi continuare?')
+                        ->action(fn (Discount $record) => $record->update(['is_active' => !$record->is_active]))
+                        ->successNotificationTitle(fn(Discount $record) => ($record->is_active ? 'Sconto attivato' : 'Sconto disattivato')),
                 ]),
             ])
             ->toolbarActions([

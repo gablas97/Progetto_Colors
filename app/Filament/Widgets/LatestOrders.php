@@ -35,8 +35,7 @@ class LatestOrders extends TableWidget
                     ->tooltip('Clicca per copiare'),
 
                 TextColumn::make('customer_email')
-                    ->label('Cliente')
-                    ->searchable(),
+                    ->label('Cliente'),
 
                 TextColumn::make('total')
                     ->label('Totale')
@@ -94,9 +93,9 @@ class LatestOrders extends TableWidget
             ])
             ->recordActions([
                 Action::make('view')
-                    ->label('Visualizza')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn (Order $record): string => OrderResource::getUrl('view', ['record' => $record])),
+                    ->label('Gestisci')
+                    ->icon('heroicon-o-pencil-square')
+                    ->url(fn (Order $record): string => OrderResource::getUrl('edit', ['record' => $record])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

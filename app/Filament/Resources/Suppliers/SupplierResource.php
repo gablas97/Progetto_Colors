@@ -1,15 +1,19 @@
 <?php
 
-
 namespace App\Filament\Resources\Suppliers;
 
 use App\Models\Supplier;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
@@ -29,9 +33,9 @@ class SupplierResource extends Resource
     protected static ?string $pluralModelLabel = 'Fornitori';
     protected static ?int $navigationSort = 1;
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
-        return $schema->components([
+        return $schema->schema([
             Section::make('Dati Aziendali')
                 ->schema([
                     Forms\Components\TextInput::make('company_name')
@@ -68,15 +72,55 @@ class SupplierResource extends Resource
         ]);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Section::make('Dati Aziendali')
+                ->schema([
+                    TextEntry::make('company_name')->label('Ragione Sociale')->weight('bold'),
+                    TextEntry::make('contact_name')->label('Referente')->placeholder('—'),
+                    TextEntry::make('vat_number')->label('Partita IVA')->placeholder('—')->copyable(),
+                    TextEntry::make('tax_code')->label('Codice Fiscale')->placeholder('—')->copyable(),
+                ])->columns(2),
+
+            Section::make('Contatti')
+                ->schema([
+                    TextEntry::make('email')->label('Email')->placeholder('—')->copyable(),
+                    TextEntry::make('phone')->label('Telefono')->placeholder('—'),
+                    TextEntry::make('mobile')->label('Cellulare')->placeholder('—'),
+                    TextEntry::make('website')->label('Sito Web')->placeholder('—'),
+                ])->columns(2),
+
+            Section::make('Indirizzo')
+                ->schema([
+                    TextEntry::make('full_address')
+                        ->label('Indirizzo Completo')
+                        ->getStateUsing(fn (Supplier $record): string => $record->full_address ?: '—')
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Altre Informazioni')
+                ->schema([
+                    TextEntry::make('payment_terms')->label('Termini di Pagamento')->placeholder('—'),
+                    IconEntry::make('is_active')->label('Attivo')->boolean(),
+                ])->columns(2),
+
+            Section::make('Note')
+                ->schema([
+                    TextEntry::make('notes')->label('')->placeholder('Nessuna nota')->columnSpanFull(),
+                ])->collapsible()->collapsed(fn (Supplier $record) => !$record->notes),
+        ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('company_name')->label('Ragione Sociale')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('contact_name')->label('Referente')->searchable(),
-                Tables\Columns\TextColumn::make('email')->label('Email')->searchable(),
-                Tables\Columns\TextColumn::make('phone')->label('Telefono'),
-                Tables\Columns\TextColumn::make('city')->label('Città')->searchable(),
+                Tables\Columns\TextColumn::make('contact_name')->label('Referente')->searchable()->placeholder('—'),
+                Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->placeholder('—'),
+                Tables\Columns\TextColumn::make('phone')->label('Telefono')->placeholder('—'),
+                Tables\Columns\TextColumn::make('city')->label('Città')->searchable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('orders_count')->label('Ordini')->counts('orders')->badge()->sortable(),
                 Tables\Columns\IconColumn::make('is_active')->label('Attivo')->boolean(),
             ])
@@ -84,9 +128,43 @@ class SupplierResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_active')->label('Stato'),
                 Tables\Filters\TrashedFilter::make(),
             ])
+            ->recordUrl(null)
+            ->recordAction(ViewAction::class)
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none'])
+                    ->modalWidth('3xl'),
+                ActionGroup::make([
+                    EditAction::make()->label('Modifica')->color('warning'),
+                    Action::make('toggle_active')
+                        ->label(fn (Supplier $record) => $record->is_active ? 'Disattiva' : 'Attiva')
+                        ->icon(fn (Supplier $record) => $record->is_active ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                        ->color(fn (Supplier $record) => $record->is_active ? 'warning' : 'success')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn (Supplier $record) => $record->is_active ? 'Disattiva fornitore' : 'Attiva fornitore')
+                        ->modalDescription(fn (Supplier $record) => $record->is_active
+                            ? 'Il fornitore verrà disattivato. Continuare?'
+                            : 'Il fornitore verrà riattivato. Continuare?'
+                        )
+                        ->action(fn (Supplier $record) => $record->update(['is_active' => !$record->is_active])),
+                    DeleteAction::make()
+                        ->label('Elimina')
+                        ->modalHeading('Elimina fornitore')
+                        ->modalDescription('Il fornitore verrà eliminato definitivamente. Continuare?')
+                        ->before(function (Supplier $record, \Filament\Actions\DeleteAction $action) {
+                            $activeOrders = $record->orders()
+                                ->whereNotIn('status', ['received', 'cancelled'])
+                                ->exists();
+                            if ($activeOrders) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Impossibile eliminare')
+                                    ->body('Il fornitore ha ordini attivi (bozza, inviati o confermati). Completa o annulla gli ordini prima di eliminare il fornitore.')
+                                    ->danger()
+                                    ->send();
+                                $action->cancel();
+                            }
+                        }),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -98,10 +176,9 @@ class SupplierResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSuppliers::route('/'),
+            'index'  => Pages\ListSuppliers::route('/'),
             'create' => Pages\CreateSupplier::route('/create'),
-            'edit' => Pages\EditSupplier::route('/{record}/edit'),
-            'view' => Pages\ViewSupplier::route('/{record}'),
+            'edit'   => Pages\EditSupplier::route('/{record}/edit'),
         ];
     }
 }

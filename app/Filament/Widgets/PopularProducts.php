@@ -22,7 +22,6 @@ class PopularProducts extends TableWidget
         return $table
             ->heading('Prodotti Più Venduti')
             ->query(fn (): Builder => Product::query()
-                ->where('sales_count', '>', 0)
                 ->orderBy('sales_count', 'desc')
                 ->limit(10)
             )

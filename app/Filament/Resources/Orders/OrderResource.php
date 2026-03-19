@@ -6,7 +6,6 @@ use App\Filament\Exports\OrderExporter;
 use App\Filament\Resources\Orders\Pages\CreateOrder;
 use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Filament\Resources\Orders\Pages\ListOrders;
-use App\Filament\Resources\Orders\Pages\ViewOrder;
 use App\Models\Order;
 use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -18,6 +17,8 @@ use Filament\Actions\ExportBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -40,7 +41,133 @@ class OrderResource extends Resource
     
     protected static ?string $pluralModelLabel = 'Ordini';
 
-    public static function schema(Schema $schema): Schema
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make('Informazioni Ordine')
+                ->schema([
+                    TextEntry::make('order_number')
+                        ->label('Numero Ordine')
+                        ->size('lg')
+                        ->weight('bold')
+                        ->copyable(),
+
+                    TextEntry::make('created_at')
+                        ->label('Data Ordine')
+                        ->dateTime('d/m/Y H:i'),
+
+                    TextEntry::make('shipping_full_name')
+                        ->label('Cliente'),
+
+                    TextEntry::make('customer_email')
+                        ->label('Email')
+                        ->copyable(),
+
+                    TextEntry::make('status')
+                        ->label('Stato Ordine')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'pending' => 'In Attesa',
+                            'processing' => 'In Elaborazione',
+                            'shipped' => 'Spedito',
+                            'delivered' => 'Consegnato',
+                            'cancelled' => 'Annullato',
+                            default => $state,
+                        })
+                        ->color(fn (string $state): string => match ($state) {
+                            'pending' => 'gray',
+                            'processing' => 'warning',
+                            'shipped' => 'info',
+                            'delivered' => 'success',
+                            'cancelled' => 'danger',
+                            default => 'gray',
+                        }),
+
+                    TextEntry::make('payment_status')
+                        ->label('Stato Pagamento')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'pending' => 'In Attesa',
+                            'paid' => 'Pagato',
+                            'failed' => 'Fallito',
+                            'refunded' => 'Rimborsato',
+                            default => $state,
+                        })
+                        ->color(fn (string $state): string => match ($state) {
+                            'pending' => 'warning',
+                            'paid' => 'success',
+                            'failed' => 'danger',
+                            'refunded' => 'gray',
+                            default => 'gray',
+                        }),
+
+                    TextEntry::make('payment_method')
+                        ->label('Metodo Pagamento')
+                        ->formatStateUsing(fn (?string $state): string => match ($state) {
+                            'credit_card' => 'Carta di Credito',
+                            'paypal' => 'PayPal',
+                            'bank_transfer' => 'Bonifico Bancario',
+                            default => $state ?? '—',
+                        }),
+                ])
+                ->columns(2),
+
+            Section::make('Indirizzo Spedizione')
+                ->schema([
+                    TextEntry::make('shipping_full_name')->label('Destinatario'),
+                    TextEntry::make('shipping_company')->label('Azienda')->placeholder('N/A'),
+                    TextEntry::make('shipping_address')->label('Indirizzo'),
+                    TextEntry::make('shipping_city')->label('Città'),
+                    TextEntry::make('shipping_province')->label('Provincia'),
+                    TextEntry::make('shipping_postal_code')->label('CAP'),
+                    TextEntry::make('shipping_phone')->label('Telefono')->placeholder('N/A'),
+                ])
+                ->columns(2)
+                ->collapsed(),
+
+            Section::make('Articoli Ordinati')
+                ->schema([
+                    RepeatableEntry::make('items')
+                        ->label('')
+                        ->schema([
+                            TextEntry::make('full_product_name')->label('Prodotto'),
+                            TextEntry::make('product_sku')->label('SKU'),
+                            TextEntry::make('price')->label('Prezzo')->money('EUR'),
+                            TextEntry::make('quantity')->label('Qta'),
+                            TextEntry::make('total')->label('Totale')->money('EUR'),
+                        ])
+                        ->columns(5),
+                ]),
+
+            Section::make('Riepilogo Importi')
+                ->schema([
+                    TextEntry::make('subtotal')->label('Subtotale')->money('EUR'),
+                    TextEntry::make('discount_amount')
+                        ->label('Sconto')
+                        ->money('EUR')
+                        ->visible(fn ($record) => $record->discount_amount > 0),
+                    TextEntry::make('shipping_cost')->label('Spedizione')->money('EUR'),
+                    TextEntry::make('tax_amount')->label('IVA')->money('EUR'),
+                    TextEntry::make('total')
+                        ->label('TOTALE')
+                        ->money('EUR')
+                        ->size('lg')
+                        ->weight('bold')
+                        ->color('success'),
+                ])
+                ->columns(2),
+
+            Section::make('Note')
+                ->schema([
+                    TextEntry::make('notes')->label('Note Cliente')->placeholder('Nessuna nota'),
+                    TextEntry::make('admin_notes')->label('Note Admin')->placeholder('Nessuna nota'),
+                ])
+                ->columns(2)
+                ->collapsed(),
+        ]);
+    }
+
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
@@ -127,7 +254,7 @@ class OrderResource extends Resource
                             ->prefix('€')
                             ->disabled(),
                     ])
-                    ->columns(5),
+                    ->columns(3),
 
                 Section::make('Note')
                     ->schema([
@@ -156,22 +283,29 @@ class OrderResource extends Resource
                     ->weight('bold')
                     ->copyable()
                     ->tooltip('Clicca per copiare')
-                    ->copyMessage('N. ordine copiato!'),
+                    ->copyMessage('N. ordine copiato!')
+                    ->toggleable(),
 
-                Tables\Columns\TextColumn::make('customer_email')
+                Tables\Columns\TextColumn::make('shipping_full_name')
                     ->label('Cliente')
-                    ->searchable(['users.email', 'guest_email'])
-                    ->sortable(),
+                    ->searchable(['shipping_first_name', 'shipping_last_name'])
+                    ->description(fn (Order $record): string => $record->customer_email ?? '')
+                    ->sortable(['shipping_last_name', 'shipping_first_name'])
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('total')
                     ->label('Totale')
                     ->money('EUR')
                     ->sortable()
-                    ->weight('medium'),
+                    ->alignCenter()
+                    ->weight('medium')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('payment_status')
                     ->label('Stato Pagamento')
                     ->badge()
+                    ->sortable()
+                    ->alignCenter()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'pending' => 'In Attesa',
                         'paid' => 'Pagato',
@@ -185,11 +319,14 @@ class OrderResource extends Resource
                         'failed' => 'danger',
                         'refunded' => 'gray',
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Stato')
                     ->badge()
+                    ->sortable()
+                    ->alignCenter()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'pending' => 'In Attesa',
                         'processing' => 'In Elaborazione',
@@ -205,18 +342,21 @@ class OrderResource extends Resource
                         'delivered' => 'success',
                         'cancelled' => 'danger',
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('items_count')
                     ->label('Articoli')
                     ->counts('items')
                     ->badge()
-                    ->color('primary'),
+                    ->color('primary')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Data')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->dateTime('d/m/Y')
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->defaultSort('id', 'asc')
             ->filters([
@@ -262,10 +402,17 @@ class OrderResource extends Resource
                             );
                     }),
             ])
+            ->recordUrl(null)
+            ->recordAction(ViewAction::class)
             ->recordActions([
+                ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none'])
+                    ->modalHeading(fn (Order $record): string => "Ordine {$record->order_number}")
+                    ->modalWidth('5xl'),
                 ActionGroup::make([
-                    ViewAction::make(),
                     EditAction::make()
+                        ->label('Gestisci')
+                        ->icon('heroicon-o-cog-6-tooth')
                         ->color('info'),
                     
                     Action::make('download_invoice')
@@ -273,9 +420,10 @@ class OrderResource extends Resource
                         ->icon('heroicon-o-document-arrow-down')
                         ->color('danger')
                         ->action(function (Order $record) {
-                            return response()->streamDownload(function () use ($record) {
-                                echo Pdf::loadView('pdf.invoice', ['order' => $record])->output();
-                            }, "fattura-{$record->order_number}.pdf");
+                            $invoice = static::buildInvoiceData($record);
+                            return response()->streamDownload(function () use ($invoice) {
+                                echo Pdf::loadView('pdf.invoice', ['invoice' => $invoice])->output();
+                            }, "FATTURA-{$record->order_number}.pdf");
                         }),
                     
                     Action::make('mark_as_shipped')
@@ -284,7 +432,18 @@ class OrderResource extends Resource
                         ->color('warning')
                         ->requiresConfirmation()
                         ->visible(fn (Order $record) => $record->status === 'processing')
-                        ->action(fn (Order $record) => $record->markAsShipped()),
+                        ->action(function (Order $record) {
+                            if ($record->payment_status !== 'paid') {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Pagamento non ricevuto')
+                                    ->body('Non è possibile spedire un ordine non ancora pagato.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            $record->markAsShipped();
+                        })
+                        ->successNotificationTitle('Ordine segnato come spedito'),
                     
                     Action::make('mark_as_delivered')
                         ->label('Segna come Consegnato')
@@ -292,7 +451,8 @@ class OrderResource extends Resource
                         ->color('success')
                         ->requiresConfirmation()
                         ->visible(fn (Order $record) => $record->status === 'shipped')
-                        ->action(fn (Order $record) => $record->markAsDelivered()),
+                        ->action(fn (Order $record) => $record->markAsDelivered())
+                        ->successNotificationTitle('Ordine segnato come consegnato'),
                 ]),
             ])
             ->toolbarActions([
@@ -324,7 +484,6 @@ class OrderResource extends Resource
         return [
             'index' => ListOrders::route('/'),
             'create' => CreateOrder::route('/create'),
-            'view' => ViewOrder::route('/{record}'),
             'edit' => EditOrder::route('/{record}/edit'),
         ];
     }
@@ -335,6 +494,49 @@ class OrderResource extends Resource
             ->withoutGlobalScopes([
                 \Illuminate\Database\Eloquent\SoftDeletingScope::class,
             ]);
+    }
+
+    public static function buildInvoiceData(Order $order): array
+    {
+        $order->loadMissing('items');
+
+        $billingAddress = implode(', ', array_filter([
+            $order->billing_address ?? $order->shipping_address,
+            $order->billing_city ?? $order->shipping_city,
+            ($order->billing_postal_code ?? $order->shipping_postal_code) . ' ' . ($order->billing_province ?? $order->shipping_province),
+        ]));
+
+        return [
+            'invoice_number'  => $order->order_number,
+            'status'          => $order->payment_status ?? 'pending',
+            'issue_date'      => $order->created_at->format('d/m/Y'),
+            'due_date'        => $order->created_at->format('d/m/Y'),
+            'client_name'     => $order->billing_full_name ?? $order->shipping_full_name ?? '—',
+            'client_address'  => $billingAddress ?: '—',
+            'client_vat'      => $order->billing_vat_number ?? '—',
+            'client_email'    => $order->customer_email ?? '—',
+            'client_sdi_code' => null,
+            'client_pec'      => null,
+            'items'           => $order->items->map(fn ($item) => [
+                'description' => $item->full_product_name,
+                'quantity'    => $item->quantity,
+                'unit_price'  => $item->price,
+                'vat_rate'    => 22,
+                'discount'    => 0,
+                'total'       => $item->total,
+            ])->toArray(),
+            'subtotal'        => $order->subtotal ?? 0,
+            'discount_amount' => $order->discount_amount ?? 0,
+            'tax_amount'      => $order->tax_amount ?? 0,
+            'total'           => $order->total ?? 0,
+            'notes'           => $order->notes,
+            'payment_method'  => match ($order->payment_method) {
+                'credit_card'   => 'Carta di Credito',
+                'paypal'        => 'PayPal',
+                'bank_transfer' => 'Bonifico Bancario',
+                default         => $order->payment_method ?? 'N/A',
+            },
+        ];
     }
 
     public static function getNavigationBadge(): ?string

@@ -6,9 +6,11 @@ use App\Filament\Resources\Products\Pages;
 use App\Filament\Resources\Products\RelationManagers\ImagesRelationManager;
 use App\Filament\Resources\Products\RelationManagers\ReviewsRelationManager;
 use App\Filament\Resources\Products\RelationManagers\VariantsRelationManager;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use BackedEnum;
-use Closure;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -18,14 +20,20 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -47,7 +55,7 @@ class ProductResource extends Resource
     
     protected static ?string $pluralModelLabel = 'Prodotti';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
@@ -60,10 +68,8 @@ class ProductResource extends Resource
                                     ->required()
                                     ->maxLength(255)
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(function ($state, Closure $set, ?string $context = null) {
-                                        if ($context === 'create') {
-                                            $set('slug', Str::slug($state));
-                                        }
+                                    ->afterStateUpdated(function (?string $state, Set $set) {
+                                        $set('slug', Str::slug($state ?? ''));
                                     }),
 
                                 Forms\Components\TextInput::make('slug')
@@ -161,7 +167,8 @@ class ProductResource extends Resource
                                             ->label('Quantità Stock')
                                             ->numeric()
                                             ->default(0)
-                                            ->required(),
+                                            ->required()
+                                            ->hidden(fn (Get $get) => ! $get('/manage_stock')),
 
                                         Forms\Components\FileUpload::make('image')
                                             ->label('Immagine Variante')
@@ -264,13 +271,37 @@ class ProductResource extends Resource
                                     ->multiple()
                                     ->preload()
                                     ->searchable()
-                                    ->required(),
+                                    ->required()
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Nome')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\Textarea::make('description')
+                                            ->label('Descrizione')
+                                            ->rows(2),
+                                    ])
+                                    ->createOptionUsing(fn (array $data) => Category::create($data)->getKey()),
 
                                 Select::make('brand_id')
                                     ->label('Brand')
                                     ->relationship('brand', 'name')
                                     ->searchable()
-                                    ->preload(),
+                                    ->preload()
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Nome')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\TextInput::make('website')
+                                            ->label('Sito Web')
+                                            ->url()
+                                            ->maxLength(255),
+                                        Forms\Components\Textarea::make('description')
+                                            ->label('Descrizione')
+                                            ->rows(2),
+                                    ])
+                                    ->createOptionUsing(fn (array $data) => Brand::create($data)->getKey()),
 
                                 TextInput::make('weight')
                                     ->label('Peso')
@@ -283,12 +314,21 @@ class ProductResource extends Resource
 
                                 Forms\Components\Toggle::make('is_active')
                                     ->label('Prodotto Attivo')
-                                    ->default(true),
+                                    ->default(true)
+                                    ->live()
+                                    ->afterStateUpdated(function (bool $state, Set $set) {
+                                        if (! $state) {
+                                            $set('is_featured', false);
+                                        }
+                                    }),
 
                                 Forms\Components\Toggle::make('is_featured')
                                     ->label('In Evidenza')
                                     ->default(false)
-                                    ->helperText('Mostra in homepage'),
+                                    ->disabled(fn (Get $get) => ! $get('is_active'))
+                                    ->helperText(fn (Get $get) => ! $get('is_active')
+                                        ? 'Attiva il prodotto per poterlo mettere in evidenza'
+                                        : 'Mostra in homepage'),
 
                                 Forms\Components\TextInput::make('order')
                                     ->label('Ordine')
@@ -321,6 +361,145 @@ class ProductResource extends Resource
             ->columns(3);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Group::make([
+                Section::make('Informazioni')->schema([
+                    ImageEntry::make('main_image')
+                        ->label('Immagine Principale')
+                        ->imageHeight(200)
+                        ->columnSpanFull(),
+
+                    TextEntry::make('name')
+                        ->label('Nome Prodotto'),
+
+                    TextEntry::make('sku')
+                        ->label('Codice SKU'),
+
+                    TextEntry::make('barcode')
+                        ->label('Codice a Barre')
+                        ->placeholder('—'),
+
+                    TextEntry::make('slug')
+                        ->label('Slug URL'),
+                ])->columns(2),
+
+                Section::make('Descrizione')->schema([
+                    TextEntry::make('short_description')
+                        ->label('Descrizione Breve')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+
+                    TextEntry::make('description')
+                        ->label('Descrizione Completa')
+                        ->html()
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ]),
+
+                Section::make('Varianti')->schema([
+                    RepeatableEntry::make('variants')
+                        ->label('')
+                        ->schema([
+                            TextEntry::make('name')->label('Variante'),
+                            TextEntry::make('sku')->label('SKU'),
+                            TextEntry::make('barcode')->label('Barcode')->placeholder('—'),
+                            TextEntry::make('stock_quantity')
+                                ->label('Stock')
+                                ->formatStateUsing(fn ($state, $record): string =>
+                                    $record->product?->manage_stock ? ($state ?? '0') : '—'
+                                ),
+                            IconEntry::make('is_active')->label('Attiva')->boolean(),
+                        ])
+                        ->columns(5)
+                        ->columnSpanFull(),
+                ])->collapsible(),
+            ])->columnSpan(2),
+
+            Group::make([
+                Section::make('Prezzi')->schema([
+                    TextEntry::make('price')
+                        ->label('Prezzo')
+                        ->money('EUR'),
+
+                    TextEntry::make('compare_at_price')
+                        ->label('Prezzo di Confronto')
+                        ->money('EUR')
+                        ->placeholder('—'),
+
+                    TextEntry::make('cost')
+                        ->label('Costo Acquisto')
+                        ->money('EUR')
+                        ->placeholder('—'),
+
+                    TextEntry::make('vat_rate')
+                        ->label('Aliquota IVA')
+                        ->suffix('%'),
+
+                    TextEntry::make('margin')
+                        ->label('Margine')
+                        ->suffix('%')
+                        ->placeholder('—'),
+                ]),
+
+                Section::make('Inventario')->schema([
+                    IconEntry::make('manage_stock')
+                        ->label('Gestione Stock')
+                        ->boolean(),
+
+                    TextEntry::make('stock_quantity')
+                        ->label('Giacenza'),
+
+                    TextEntry::make('low_stock_threshold')
+                        ->label('Soglia Stock Basso'),
+
+                    TextEntry::make('weight')
+                        ->label('Peso')
+                        ->suffix(' g')
+                        ->placeholder('—'),
+
+                    TextEntry::make('dimensions')
+                        ->label('Dimensioni')
+                        ->placeholder('—'),
+                ]),
+
+                Section::make('Stato & Organizzazione')->schema([
+                    IconEntry::make('is_active')
+                        ->label('Attivo')
+                        ->boolean(),
+
+                    IconEntry::make('is_featured')
+                        ->label('In Evidenza')
+                        ->boolean(),
+
+                    TextEntry::make('brand.name')
+                        ->label('Brand')
+                        ->placeholder('—'),
+
+                    TextEntry::make('categories.name')
+                        ->label('Categorie')
+                        ->badge()
+                        ->separator(', '),
+                ]),
+
+                Section::make('SEO')->schema([
+                    TextEntry::make('meta_title')
+                        ->label('Meta Titolo')
+                        ->placeholder('—'),
+
+                    TextEntry::make('meta_description')
+                        ->label('Meta Descrizione')
+                        ->placeholder('—'),
+
+                    TextEntry::make('meta_keywords')
+                        ->label('Keywords')
+                        ->placeholder('—'),
+                ])->collapsible()->collapsed(),
+            ])->columnSpan(1),
+        ])->columns(3);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -328,21 +507,25 @@ class ProductResource extends Resource
                 Tables\Columns\ImageColumn::make('main_image')
                     ->label('Immagine')
                     ->square()
-                    ->defaultImageUrl(url('/images/placeholder-product.png')),
+                    ->defaultImageUrl(url('/images/placeholder-product.png'))
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nome')
                     ->searchable()
                     ->sortable()
-                    ->description(fn (Product $record): string => $record->short_description ?? '')
-                    ->weight('medium'),
+                    ->description(fn (Product $record): string => \Illuminate\Support\Str::limit($record->short_description ?? '', 40))
+                    ->weight('medium')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('categories.name')
                     ->label('Categorie')
                     ->badge()
                     ->separator(',')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('Prezzo')
@@ -350,9 +533,11 @@ class ProductResource extends Resource
                     ->sortable()
                     ->description(fn (Product $record): ?string => 
                         $record->compare_at_price 
-                            ? '€' . number_format($record->compare_at_price, 2) 
+                            ? number_format($record->compare_at_price, 2, ',', '.') . ' €'
                             : null
-                    ),
+                    )
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('stock_quantity')
                     ->label('Stock')
@@ -360,7 +545,7 @@ class ProductResource extends Resource
                     ->alignCenter()
                     ->badge()
                     ->color(fn (Product $record): string => match (true) {
-                        $record->manage_stock === false => 'success',
+                        $record->manage_stock === false => 'gray',
                         $record->stock_quantity === 0 => 'danger',
                         $record->stock_quantity <= $record->low_stock_threshold => 'warning',
                         default => 'success',
@@ -368,14 +553,16 @@ class ProductResource extends Resource
                     ->formatStateUsing(fn (Product $record): string => 
                         $record->manage_stock 
                             ? $record->stock_quantity . ' pz' 
-                            : '∞'
-                    ),
+                            : '—'
+                    )
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Attivo')
                     ->boolean()
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\IconColumn::make('is_featured')
                     ->label('Evidenza')
@@ -425,20 +612,76 @@ class ProductResource extends Resource
                     ->trueLabel('Tutti')
                     ->falseLabel('Solo eliminati'),
             ])
+            ->recordUrl(null)
+            ->recordAction('view')
             ->recordActions([
+                ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none'])
+                    ->modalHeading(fn (Product $record) : string => "Prodotto: $record->name")
+                    ->modalWidth('5xl'),
                 ActionGroup::make([
-                    EditAction::make(),
-                    DeleteAction::make(),
-                    ForceDeleteAction::make(),
-                    RestoreAction::make(),
-                ]),
+                    EditAction::make()
+                        ->label('Modifica')
+                        ->color('info'),
+
+                    Action::make('toggle_active')
+                        ->label(fn (Product $record) => $record->is_active ? 'Disattiva' : 'Attiva')
+                        ->icon(fn (Product $record) => $record->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
+                        ->color(fn (Product $record) => $record->is_active ? 'warning' : 'success')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn (Product $record) => $record->is_active ? 'Disattiva prodotto' : 'Attiva prodotto')
+                        ->modalDescription(fn (Product $record) => $record->is_active
+                            ? 'Il prodotto non sarà più visibile. Vuoi continuare?'
+                            : 'Il prodotto tornerà visibile sul sito. Vuoi continuare?')
+                        ->visible(fn (Product $record) => ! $record->trashed())
+                        ->action(fn (Product $record) => $record->update(['is_active' => !$record->is_active]))
+                        ->successNotificationTitle(fn (Product $record) => $record->is_active ? 'Prodotto attivato' : 'Prodotto disattivato'),
+
+                    Action::make('toggle_featured')
+                        ->label(fn (Product $record) => $record->is_featured ? 'Rimuovi da evidenza' : 'Metti in evidenza')
+                        ->icon('heroicon-o-star')
+                        ->color(fn (Product $record) => $record->is_featured ? 'warning' : 'success')
+                        ->disabled(fn (Product $record) => ! $record->is_active)
+                        ->tooltip(fn (Product $record) => ! $record->is_active ? 'Attiva il prodotto per poterlo mettere in evidenza' : null)
+                        ->visible(fn (Product $record) => ! $record->trashed())
+                        ->action(fn (Product $record) => $record->update(['is_featured' => !$record->is_featured]))
+                        ->successNotificationTitle(fn (Product $record) => $record->is_featured ? 'Prodotto messo in evidenza' : 'Prodotto tolto da evidenza'),
+
+                    DeleteAction::make()
+                        ->label('Elimina')
+                        ->modalHeading('Elimina prodotto')
+                        ->modalDescription('Sei sicuro di voler eliminare il prodotto? Potrà essere ripristinato in seguito.')
+                        ->successNotificationTitle('Prodotto eliminato con successo'),
+                    RestoreAction::make()
+                        ->label('Ripristina')
+                        ->modalHeading('Ripristina prodotto')
+                        ->modalDescription('Sei sicuro di voler ripristinare il prodotto?')
+                        ->successNotificationTitle('Prodotto ripristinato con successo'),
+                    ForceDeleteAction::make()
+                        ->label('Elimina definitivamente')
+                        ->modalHeading('Elimina definitivamente il prodotto')
+                        ->modalDescription('Sei sicuro di voler eliminare definitivamente il prodotto? Questa azione non può essere annullata.')
+                        ->successNotificationTitle('Prodotto eliminato definitivamente'),
+                ])->label('Azioni'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()
+                        ->label('Elimina selezionati')
+                        ->modalHeading('Elimina prodotti selezionati')
+                        ->modalDescription('Sei sicuro di voler eliminare i prodotti selezionati? Potranno essere ripristinati in seguito.')
+                        ->successNotificationTitle('Prodotti eliminati con successo'),
+                    RestoreBulkAction::make()
+                        ->label('Ripristina selezionati')
+                        ->modalHeading('Ripristina prodotti selezionati')
+                        ->modalDescription('Sei sicuro di voler ripristinare i prodotti selezionati?')
+                        ->successNotificationTitle('Prodotti ripristinati con successo'),
+                    ForceDeleteBulkAction::make()
+                        ->label('Elimina definitivamente')
+                        ->modalHeading('Elimina definitivamente i prodotti selezionati')
+                        ->modalDescription('Sei sicuro di voler eliminare definitivamente i prodotti selezionati? Questa azione non può essere annullata.')
+                        ->successNotificationTitle('Prodotti eliminati definitivamente'),
+                ])->label('Azioni di massa'),
             ])
             ->emptyStateHeading('Nessun prodotto trovato')
             ->emptyStateDescription('Crea un nuovo prodotto')

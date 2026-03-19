@@ -2,16 +2,15 @@
 
 namespace App\Filament\Resources\Categories;
 
-use Closure;
 use UnitEnum;
 use BackedEnum;
 use Filament\Forms;
 use Filament\Tables;
 use App\Models\Category;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -22,10 +21,10 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\Categories\Pages\EditCategory;
-use App\Filament\Resources\Categories\Pages\CreateCategory;
 use App\Filament\Resources\Categories\Pages\ListCategories;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
@@ -44,7 +43,30 @@ class CategoryResource extends Resource
     
     protected static ?string $pluralModelLabel = 'Categorie';
 
-    public static function schema(Schema $schema): Schema
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Section::make('Informazioni Base')
+                ->schema([
+                    TextEntry::make('name')->label('Nome'),
+                    TextEntry::make('slug')->label('Slug'),
+                    TextEntry::make('parent.name')
+                        ->label('Categoria Padre')
+                        ->placeholder('Categoria Principale'),
+                    TextEntry::make('description')
+                        ->label('Descrizione')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ])->columns(2),
+
+            Section::make('Impostazioni')
+                ->schema([
+                    IconEntry::make('is_active')->label('Attiva')->boolean(),
+                ])->columns(1),
+        ]);
+    }
+
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
@@ -53,19 +75,7 @@ class CategoryResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->label('Nome')
                             ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, Closure $set, ?string $context = null) {
-                                if ($context === 'create') {
-                                    $set('slug', Str::slug($state));
-                                }
-                            }),
-
-                        Forms\Components\TextInput::make('slug')
-                            ->label('Slug (URL)')
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true)
-                            ->helperText('URL della categoria'),
+                            ->maxLength(255),
 
                         Forms\Components\Select::make('parent_id')
                             ->label('Categoria Padre')
@@ -100,25 +110,12 @@ class CategoryResource extends Resource
 
                 Section::make('Impostazioni')
                     ->schema([
-                        Forms\Components\FileUpload::make('image')
-                            ->label('Immagine')
-                            ->image()
-                            ->directory('categories')
-                            ->imageEditor()
-                            ->maxSize(2048),
-
-                        Forms\Components\TextInput::make('order')
-                            ->label('Ordine')
-                            ->numeric()
-                            ->default(0)
-                            ->helperText('Ordine di visualizzazione (0 = primo)'),
-
                         Forms\Components\Toggle::make('is_active')
                             ->label('Attiva')
                             ->default(true)
                             ->helperText('Mostra categoria nel sito'),
                     ])
-                    ->columns(3),
+                    ->columns(1),
             ]);
     }
 
@@ -126,16 +123,12 @@ class CategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('image')
-                    ->label('Immagine')
-                    ->circular()
-                    ->defaultImageUrl(url('/images/placeholder.png')),
-
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nome')
                     ->searchable()
                     ->sortable()
-                    ->description(fn (Category $record): string => $record->description ?? ''),
+                    ->description(fn (Category $record): string => $record->description ?? '')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('parent.name')
                     ->label('Categoria Padre')
@@ -143,7 +136,8 @@ class CategoryResource extends Resource
                     ->sortable()
                     ->placeholder('Categoria Principale')
                     ->badge()
-                    ->color('gray'),
+                    ->color('gray')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Prodotti')
@@ -151,18 +145,15 @@ class CategoryResource extends Resource
                     ->sortable()
                     ->badge()
                     ->alignCenter()
-                    ->color('info'),
-
-                Tables\Columns\TextColumn::make('order')
-                    ->label('Ordine')
-                    ->sortable()
-                    ->alignCenter(),
+                    ->color('info')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Attiva')
                     ->boolean()
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creata il')
@@ -193,8 +184,10 @@ class CategoryResource extends Resource
                     ->falseLabel('Solo eliminate'),
 
             ])
-            ->recordAction(EditAction::class)
+            ->recordAction(ViewAction::class)
             ->recordActions([
+                ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none']),
                 ActionGroup::make([
                     EditAction::make(),
                     DeleteAction::make(),
@@ -232,8 +225,6 @@ class CategoryResource extends Resource
     {
         return [
             'index' => ListCategories::route('/'),
-            'create' => CreateCategory::route('/create'),
-            'edit' => EditCategory::route('/{record}/edit'),
         ];
     }
 

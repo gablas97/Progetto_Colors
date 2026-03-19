@@ -119,7 +119,7 @@ class Invoice extends Model
 
     public function scopeOverdue($query)
     {
-        return $query->where('status', '!=', 'paid')
+        return $query->whereNotIn('status', ['paid', 'cancelled', 'draft'])
             ->where('due_date', '<', now());
     }
 

@@ -2,16 +2,20 @@
 
 namespace App\Filament\Resources\Products\RelationManagers;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
 
 class ImagesRelationManager extends RelationManager
 {
@@ -19,36 +23,60 @@ class ImagesRelationManager extends RelationManager
 
     protected static ?string $title = 'Galleria Immagini';
 
-    public function schema(Schema $schema): Schema
+    public function form(Schema $schema): Schema
     {
-        return $schema
-            ->schema([
-                Forms\Components\FileUpload::make('image')
+        return $schema->schema([
+            Forms\Components\FileUpload::make('image')
+                ->label('Immagine')
+                ->image()
+                ->directory('products/gallery')
+                ->imageEditor()
+                ->required()
+                ->maxSize(2048)
+                ->columnSpanFull(),
+
+            Forms\Components\TextInput::make('alt_text')
+                ->label('Testo Alternativo (SEO)')
+                ->maxLength(255)
+                ->helperText('Descrizione dell\'immagine per i motori di ricerca'),
+
+            Forms\Components\TextInput::make('order')
+                ->label('Ordine')
+                ->numeric()
+                ->default(0)
+                ->helperText('Ordine di visualizzazione nella galleria'),
+        ]);
+    }
+
+    public function infolist(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Section::make()->schema([
+                ImageEntry::make('image')
                     ->label('Immagine')
-                    ->image()
-                    ->directory('products/gallery')
-                    ->imageEditor()
-                    ->required()
-                    ->maxSize(2048)
+                    ->height(200)
                     ->columnSpanFull(),
 
-                Forms\Components\TextInput::make('alt_text')
-                    ->label('Testo Alternativo (SEO)')
-                    ->maxLength(255)
-                    ->helperText('Descrizione dell\'immagine per i motori di ricerca'),
+                TextEntry::make('alt_text')
+                    ->label('Testo Alternativo')
+                    ->placeholder('—'),
 
-                Forms\Components\TextInput::make('order')
-                    ->label('Ordine')
-                    ->numeric()
-                    ->default(0)
-                    ->helperText('Ordine di visualizzazione nella galleria'),
-            ]);
+                TextEntry::make('order')
+                    ->label('Ordine'),
+
+                TextEntry::make('created_at')
+                    ->label('Caricata il')
+                    ->dateTime('d/m/Y H:i'),
+            ])->columns(2),
+        ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
             ->recordTitleAttribute('alt_text')
+            ->recordUrl(null)
+            ->recordAction('view')
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Anteprima')
@@ -77,12 +105,18 @@ class ImagesRelationManager extends RelationManager
                     ->label('Aggiungi Immagine'),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                ViewAction::make()
+                    ->label('Visualizza')
+                    ->extraAttributes(['style' => 'display:none']),
+                EditAction::make()
+                    ->label('Modifica'),
+                DeleteAction::make()
+                    ->label('Elimina'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label('Elimina selezionate'),
                 ]),
             ])
             ->emptyStateHeading('Nessuna immagine')

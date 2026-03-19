@@ -31,9 +31,12 @@ class EditDiscount extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Converte il codice in maiuscolo
         if (!empty($data['code'])) {
             $data['code'] = strtoupper(Str::slug($data['code'], ''));
+        }
+
+        if (($data['type'] ?? null) === 'shipping') {
+            $data['value'] = 0;
         }
 
         return $data;

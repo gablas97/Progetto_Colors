@@ -123,29 +123,33 @@ class ReviewResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('product.sku')
+                TextColumn::make('product.name')
                     ->label('Prodotto')
                     ->searchable()
                     ->sortable()
-                    ->limit(30),
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: false),
 
-                TextColumn::make('user.email')
+                TextColumn::make('user.full_name')
                     ->label('Utente')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 TextColumn::make('rating')
                     ->label('Valutazione')
                     ->sortable()
                     ->formatStateUsing(fn (int $state): string => str_repeat('⭐', $state))
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 TextColumn::make('title')
                     ->label('Titolo')
                     ->searchable()
                     ->limit(40)
-                    ->placeholder('Nessun titolo'),
+                    ->placeholder('Nessun titolo')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 TextColumn::make('comment')
                     ->label('Commento')
@@ -158,13 +162,15 @@ class ReviewResource extends Resource
                     ->boolean()
                     ->sortable()
                     ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false)
                     ->tooltip(fn ($record) => $record->is_verified_purchase ? 'Acquisto verificato' : 'Non verificato'),
 
                 IconColumn::make('is_approved')
                     ->label('Approvata')
                     ->boolean()
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 TextColumn::make('helpful_count')
                     ->label('Voti "Utile"')
@@ -172,12 +178,14 @@ class ReviewResource extends Resource
                     ->badge()
                     ->color('success')
                     ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false)
                     ->formatStateUsing(fn (int $state): string => $state > 0 ? (string) $state : '0'),
 
                 TextColumn::make('created_at')
                     ->label('Data')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->dateTime('d/m/Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -235,7 +243,9 @@ class ReviewResource extends Resource
             ->recordAction(ViewAction::class)
             ->recordActions([
                 ActionGroup::make([
-                    ViewAction::make(),
+                    ViewAction::make()
+                    ->extraAttributes(['style' => 'display:none'])
+                    ->modalWidth('5xl'),
                     
                     Action::make('approve')
                         ->label('Approva')
@@ -252,7 +262,7 @@ class ReviewResource extends Resource
                     Action::make('reject')
                         ->label('Rifiuta')
                         ->icon('heroicon-o-x-circle')
-                        ->color('danger')
+                        ->color('info')
                         ->requiresConfirmation()
                         ->visible(fn ($record) => $record->is_approved)
                         ->action(function ($record) {
@@ -262,7 +272,8 @@ class ReviewResource extends Resource
                         ->successNotificationTitle('Recensione rifiutata'),
                     
                     DeleteAction::make()
-                        ->requiresConfirmation(),
+                        ->requiresConfirmation()
+                        ->successNotificationTitle('Recensione eliminata'),
                 ])
             ])
             ->toolbarActions([
@@ -284,7 +295,7 @@ class ReviewResource extends Resource
                     BulkAction::make('reject_selected')
                         ->label('Rifiuta Selezionate')
                         ->icon('heroicon-o-x-circle')
-                        ->color('danger')
+                        ->color('info')
                         ->requiresConfirmation()
                         ->action(function ($records) {
                             foreach ($records as $record) {
@@ -296,7 +307,8 @@ class ReviewResource extends Resource
                         ->successNotificationTitle('Recensioni rifiutate'),
                     
                     DeleteBulkAction::make()
-                        ->label('Elimina Selezionate'),
+                        ->label('Elimina Selezionate')
+                        ->successNotificationTitle('Recensioni eliminate'),
                 ])->label('Azioni'),
             ])
             ->emptyStateHeading('Nessuna recensione trovata')

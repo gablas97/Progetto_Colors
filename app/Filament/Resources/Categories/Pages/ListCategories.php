@@ -14,7 +14,8 @@ class ListCategories extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Nuova Categoria'),
+                ->label('Nuova Categoria')
+                ->createAnother(false),
         ];
     }
 }

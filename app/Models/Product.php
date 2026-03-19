@@ -77,6 +77,13 @@ class Product extends Model
                 $product->slug = Str::slug($product->name);
             }
         });
+
+        static::saving(function ($product) {
+            // Se il prodotto viene disattivato, rimuovilo automaticamente dall'evidenza
+            if ($product->isDirty('is_active') && ! $product->is_active) {
+                $product->is_featured = false;
+            }
+        });
     }
 
     // Relazioni
