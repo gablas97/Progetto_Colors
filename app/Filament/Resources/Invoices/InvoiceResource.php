@@ -9,7 +9,11 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms;
@@ -38,6 +42,10 @@ class InvoiceResource extends Resource
     {
         return $schema->schema([
             Section::make('Dati Fattura')
+                ->icon('heroicon-o-banknotes')->iconColor('primary')
+                ->description('Numero, tipo, stato e ordine collegato')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('invoice_number')->label('Numero Fattura')
                         ->disabled()->dehydrated()->helperText('Generato automaticamente'),
@@ -52,12 +60,16 @@ class InvoiceResource extends Resource
                             'draft'     => 'Bozza',
                             'sent'      => 'Inviata',
                             'paid'      => 'Pagata',
-                            'overdue'   => 'Scaduta',
                             'cancelled' => 'Annullata',
-                        ])->default('draft'),
+                        ])
+                        ->default('draft'),
                 ])->columns(2),
 
             Section::make('Dati Cliente')
+                ->icon('heroicon-o-user')->iconColor('primary')
+                ->description('Anagrafica e recapiti del destinatario')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\Select::make('user_id')->label('Cliente')
                         ->relationship('user', 'email')
@@ -86,6 +98,10 @@ class InvoiceResource extends Resource
                 ])->columns(2),
 
             Section::make('Date e Pagamento')
+                ->icon('heroicon-o-calendar-days')->iconColor('warning')
+                ->description('Scadenze e metodo di pagamento')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\DatePicker::make('issue_date')->label('Data Emissione')->required()->default(now()),
                     Forms\Components\DatePicker::make('due_date')->label('Data Scadenza'),
@@ -101,9 +117,14 @@ class InvoiceResource extends Resource
                 ])->columns(2),
 
             Section::make('Voci Fattura')
+                ->icon('heroicon-o-list-bullet')->iconColor('primary')
+                ->description('Aggiungi i prodotti o servizi inclusi nella fattura')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\Repeater::make('items')
                         ->relationship()
+                        ->hiddenLabel()
                         ->schema([
                             Forms\Components\Select::make('product_id')->label('Prodotto')
                                 ->relationship('product', 'name')->searchable()->preload()
@@ -117,14 +138,14 @@ class InvoiceResource extends Resource
                                             $set('vat_rate', $product->vat_rate ?? 22);
                                         }
                                     }
-                                }),
+                                })->columnSpan(2),
                             Forms\Components\TextInput::make('description')->label('Descrizione')->required()->columnSpan(2),
                             Forms\Components\TextInput::make('quantity')->label('Qtà')->numeric()->required()->default(1),
                             Forms\Components\TextInput::make('unit_price')->label('Prezzo Unit.')->numeric()->required()->prefix('€'),
                             Forms\Components\TextInput::make('vat_rate')->label('IVA %')->numeric()->default(22),
                             Forms\Components\TextInput::make('discount_percentage')->label('Sconto %')->numeric()->default(0),
                         ])
-                        ->columns(7)
+                        ->columns(3)
                         ->defaultItems(1)
                         ->addActionLabel('Aggiungi Voce')
                         ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
@@ -144,6 +165,9 @@ class InvoiceResource extends Resource
                 ]),
 
             Section::make('Note')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('discount_amount')->label('Sconto Globale')->numeric()->prefix('€')->default(0),
                     Forms\Components\Textarea::make('notes')->label('Note'),
@@ -155,6 +179,8 @@ class InvoiceResource extends Resource
     {
         return $schema->schema([
             Section::make('Dati Fattura')
+                ->icon('heroicon-o-banknotes')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('invoice_number')
                         ->label('Numero Fattura')
@@ -185,12 +211,16 @@ class InvoiceResource extends Resource
                         }),
                     TextEntry::make('order.order_number')
                         ->label('Ordine Collegato')
-                        ->placeholder('—'),
+                        ->placeholder('—')
+                        ->copyable()
+                        ->color('primary'),
                 ])->columns(2),
 
             Section::make('Dati Cliente')
+                ->icon('heroicon-o-user')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
-                    TextEntry::make('client_name')->label('Nome/Ragione Sociale'),
+                    TextEntry::make('client_name')->label('Nome/Ragione Sociale')->weight('bold'),
                     TextEntry::make('client_email')->label('Email')->placeholder('—'),
                     TextEntry::make('client_company')->label('Azienda')->placeholder('—'),
                     TextEntry::make('client_vat_number')->label('P.IVA')->placeholder('—'),
@@ -203,35 +233,41 @@ class InvoiceResource extends Resource
                             $record->client_address,
                             $record->client_postal_code . ' ' . $record->client_city,
                             $record->client_province,
-                        ])) ?: '—')
-                        ->columnSpanFull(),
-                ])->columns(2)->collapsible(),
+                        ])) ?: '—'),
+                ])->columns(3),
 
             Section::make('Voci Fattura')
+                ->icon('heroicon-o-list-bullet')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
                     RepeatableEntry::make('items')
-                        ->label('Prodotti')
+                        ->hiddenLabel()
                         ->schema([
-                            TextEntry::make('description')->label('Descrizione')->columnSpan(2),
+                            TextEntry::make('description')->label('Descrizione')->weight('medium'),
                             TextEntry::make('quantity')->label('Qtà'),
-                            TextEntry::make('unit_price')->label('Prezzo Unit.')->money('EUR'),
-                            TextEntry::make('vat_rate')->label('IVA')->suffix('%'),
-                            TextEntry::make('discount_percentage')->label('Sconto')->suffix('%'),
-                            TextEntry::make('total')->label('Totale')->money('EUR')->weight('bold')->columnSpanFull(),
+                            TextEntry::make('vat_rate')->label('IVA')->suffix('%')->color('gray'),
+                            TextEntry::make('unit_price')->label('Prezzo Unit.')->money('EUR')->color('gray'),
+                            TextEntry::make('discount_percentage')->label('Sconto')->suffix('%')->color('danger'),
+                            TextEntry::make('total')->label('Totale')->money('EUR')->weight('bold'),
                         ])
-                        ->columns(6)
+                        ->columns(3)
                         ->columnSpanFull(),
                 ]),
 
             Section::make('Importi e Date')
+                ->icon('heroicon-o-currency-euro')->iconColor('success')
+                ->columnSpanFull()
                 ->schema([
-                    TextEntry::make('subtotal')->label('Subtotale')->money('EUR'),
-                    TextEntry::make('discount_amount')->label('Sconto Globale')->money('EUR'),
-                    TextEntry::make('tax_amount')->label('IVA')->money('EUR'),
-                    TextEntry::make('total')->label('Totale')->money('EUR')->weight('bold')->size('lg'),
+                    TextEntry::make('subtotal')->label('Subtotale')->money('EUR')->color('gray'),
+                    TextEntry::make('discount_amount')->label('Sconto Globale')->money('EUR')->color('danger'),
+                    TextEntry::make('tax_amount')->label('IVA')->money('EUR')->color('gray'),
+                    TextEntry::make('total')->label('Totale')->money('EUR')->weight('bold')->size('lg')->color('success'),
                     TextEntry::make('issue_date')->label('Data Emissione')->date('d/m/Y'),
-                    TextEntry::make('due_date')->label('Data Scadenza')->date('d/m/Y')->placeholder('—'),
-                    TextEntry::make('paid_date')->label('Data Pagamento')->date('d/m/Y')->placeholder('—'),
+                    TextEntry::make('due_date')->label('Data Scadenza')->date('d/m/Y')->placeholder('—')
+                        ->color(fn ($state, Invoice $record): string =>
+                            $state && now()->gt($state) && $record->status !== 'paid' ? 'danger' : 'gray'
+                        ),
+                    TextEntry::make('paid_date')->label('Data Pagamento')->date('d/m/Y')->placeholder('—')->color('success'),
                     TextEntry::make('payment_method')
                         ->label('Metodo Pagamento')
                         ->formatStateUsing(fn ($state) => match ($state) {
@@ -245,6 +281,8 @@ class InvoiceResource extends Resource
                 ])->columns(4),
 
             Section::make('Note')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('notes')->label('Nota')->placeholder('Nessuna nota')->columnSpanFull(),
                 ])->collapsible()->collapsed(),
@@ -331,6 +369,11 @@ class InvoiceResource extends Resource
                     ]),
                 Tables\Filters\SelectFilter::make('type')->label('Tipo')
                     ->options(['invoice' => 'Fattura', 'credit_note' => 'Nota di Credito']),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Mostra Eliminate')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminate'),
             ])
             ->recordActions([
                 ViewAction::make()
@@ -360,6 +403,8 @@ class InvoiceResource extends Resource
                         ->modalDescription('La fattura verrà segnata come "Pagata". Continuare?')
                         ->action(fn (Invoice $record) => $record->markAsPaid())
                         ->successNotificationTitle('Fattura segnata come pagata'),
+                    RestoreAction::make()->label('Ripristina'),
+                    DeleteAction::make()->label('Elimina'),
                     EditAction::make()
                         ->label('Modifica')
                         ->color('warning'),
@@ -399,6 +444,8 @@ class InvoiceResource extends Resource
                         ->modalDescription('Le fatture selezionate verranno segnate come "Pagate". Continuare?')
                         ->action(fn (Collection $records) => $records->each(fn (Invoice $record) => $record->markAsPaid()))
                         ->deselectRecordsAfterCompletion(),
+                    RestoreBulkAction::make()->label('Ripristina selezionate'),
+                    DeleteBulkAction::make()->label('Elimina selezionate'),
                 ]),
             ]);
     }
@@ -410,6 +457,14 @@ class InvoiceResource extends Resource
             'create' => Pages\CreateInvoice::route('/create'),
             'edit'   => Pages\EditInvoice::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                \Illuminate\Database\Eloquent\SoftDeletingScope::class,
+            ]);
     }
 
     public static function getNavigationBadge(): ?string

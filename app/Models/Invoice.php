@@ -87,6 +87,14 @@ class Invoice extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public static function markOverdue(): int
+    {
+        return static::whereIn('status', ['sent'])
+            ->whereNotNull('due_date')
+            ->where('due_date', '<', now()->startOfDay())
+            ->update(['status' => 'overdue']);
+    }
+
     public function markAsPaid(?string $paymentMethod = null): void
     {
         $this->update([

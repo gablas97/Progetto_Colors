@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Category;
+use App\Models\Brand;
 
 class Discount extends Model
 {
@@ -29,6 +31,7 @@ class Discount extends Model
         'value',
         'min_order_amount',
         'usage_limit',
+        'is_single_use_per_user',
         'usage_count',
         'starts_at',
         'expires_at',
@@ -43,12 +46,23 @@ class Discount extends Model
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
         'is_active' => 'boolean',
+        'is_single_use_per_user' => 'boolean',
     ];
 
     // Relazioni
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class)->withTimestamps();
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'discount_category')->withTimestamps();
+    }
+
+    public function brands(): BelongsToMany
+    {
+        return $this->belongsToMany(Brand::class, 'discount_brand')->withTimestamps();
     }
 
     public function usages(): HasMany
@@ -114,7 +128,7 @@ class Discount extends Model
             return false;
         }
 
-        if ($userId !== null && $this->hasBeenUsedBy($userId)) {
+        if ($this->is_single_use_per_user && $userId !== null && $this->hasBeenUsedBy($userId)) {
             return false;
         }
 
@@ -141,6 +155,11 @@ class Discount extends Model
     public function incrementUsage(?int $userId = null, ?int $orderId = null): void
     {
         $this->increment('usage_count');
+        $this->refresh();
+
+        if ($this->usage_limit && $this->usage_count >= $this->usage_limit) {
+            $this->update(['is_active' => false]);
+        }
 
         if ($userId !== null) {
             $this->usages()->create([

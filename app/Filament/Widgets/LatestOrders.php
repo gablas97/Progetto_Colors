@@ -20,7 +20,7 @@ class LatestOrders extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Ultimi Ordini')
+            ->heading('🛍️ Ultimi Ordini')
             ->query(fn (): Builder => Order::query()
                 ->latest()
                 ->limit(10)
@@ -40,7 +40,8 @@ class LatestOrders extends TableWidget
                 TextColumn::make('total')
                     ->label('Totale')
                     ->money('EUR')
-                    ->sortable(),
+                    ->sortable()
+                    ->alignCenter(),
 
                 TextColumn::make('payment_status')
                     ->label('Pagamento')
@@ -58,7 +59,8 @@ class LatestOrders extends TableWidget
                         'failed' => 'danger',
                         'refunded' => 'gray',
                         default => 'gray',
-                    }),
+                    })
+                    ->alignCenter(),
 
                 TextColumn::make('status')
                     ->label('Stato')
@@ -78,7 +80,8 @@ class LatestOrders extends TableWidget
                         'delivered' => 'success',
                         'cancelled' => 'danger',
                         default => 'gray',
-                    }),
+                    })
+                    ->alignCenter(),
 
                 TextColumn::make('created_at')
                     ->label('Data')
@@ -92,7 +95,7 @@ class LatestOrders extends TableWidget
                 //
             ])
             ->recordActions([
-                Action::make('view')
+                Action::make('edit')
                     ->label('Gestisci')
                     ->icon('heroicon-o-pencil-square')
                     ->url(fn (Order $record): string => OrderResource::getUrl('edit', ['record' => $record])),

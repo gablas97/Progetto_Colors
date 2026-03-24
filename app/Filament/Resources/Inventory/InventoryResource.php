@@ -29,6 +29,8 @@ class InventoryResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $slug = 'inventory';
+
     protected static ?string $modelLabel = 'Inventario';
 
     protected static ?string $pluralModelLabel = 'Inventario';
@@ -42,15 +44,21 @@ class InventoryResource extends Resource
     {
         return $schema->schema([
             Section::make('Prodotto')
+                ->icon('heroicon-o-cube')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('sku')
                         ->label('SKU')
+                        ->badge()
+                        ->color('gray')
                         ->copyable()
                         ->placeholder('—'),
                     TextEntry::make('name')
-                        ->label('Nome Prodotto'),
+                        ->label('Nome Prodotto')
+                        ->weight('bold'),
                     TextEntry::make('brand.name')
                         ->label('Brand')
+                        ->color('primary')
                         ->placeholder('—'),
                     TextEntry::make('categories.name')
                         ->label('Categorie')
@@ -59,10 +67,11 @@ class InventoryResource extends Resource
                 ])->columns(2),
 
             Section::make('Stock')
+                ->icon('heroicon-o-archive-box')->iconColor('warning')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('stock_quantity')
                         ->label('Giacenza Attuale')
-                        ->badge()
                         ->color(fn (Product $record): string => match (true) {
                             $record->stock_quantity <= 0                            => 'danger',
                             $record->stock_quantity <= $record->low_stock_threshold => 'warning',
@@ -85,6 +94,8 @@ class InventoryResource extends Resource
                 ])->columns(2),
 
             Section::make('Valore Stock')
+                ->icon('heroicon-o-currency-euro')->iconColor('success')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('stock_value_calculated')
                         ->label('Valore a Prezzo di Vendita')
@@ -120,13 +131,15 @@ class InventoryResource extends Resource
                     ->copyMessage('SKU copiato!')
                     ->tooltip('Clicca per copiare')
                     ->weight('medium')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\ImageColumn::make('main_image')
-                    ->label('')
+                    ->label('Immagine')
                     ->square()
                     ->imageSize(40)
-                    ->toggleable(),
+                    ->toggleable()
+                    ->placeholder('—')
+                    ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Prodotto')
@@ -156,12 +169,15 @@ class InventoryResource extends Resource
                         . ($record->stock_quantity <= $record->low_stock_threshold && $record->stock_quantity > 0 ? ' ⚠' : '')
                         . ($record->stock_quantity <= 0 ? ' ✕' : '')
                     )
-                    ->toggleable(),
+                    ->toggleable()
+                    ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('low_stock_threshold')
                     ->label('Soglia')
                     ->sortable()
-                    ->toggleable(),
+                    ->formatStateUsing(fn ($state) => $state . ' pz')
+                    ->toggleable()
+                    ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('stock_value')
                     ->label('Valore Stock')

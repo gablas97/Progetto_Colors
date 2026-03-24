@@ -20,7 +20,7 @@ class PopularProducts extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Prodotti Più Venduti')
+            ->heading('🏆 Prodotti Più Venduti')
             ->query(fn (): Builder => Product::query()
                 ->orderBy('sales_count', 'desc')
                 ->limit(10)
@@ -29,7 +29,7 @@ class PopularProducts extends TableWidget
                 ImageColumn::make('main_image')
                     ->label('Immagine')
                     ->square()
-                    ->defaultImageUrl(url('/images/placeholder-product.png')),
+                    ->defaultImageUrl(url('/images/image-placeholder.jpg')),
 
                 TextColumn::make('name')
                     ->label('Prodotto')
@@ -45,26 +45,30 @@ class PopularProducts extends TableWidget
                     ->label('Vendite')
                     ->sortable()
                     ->badge()
-                    ->color('success'),
+                    ->color('success')
+                    ->alignCenter(),
 
                 TextColumn::make('stock_quantity')
                     ->label('Stock')
-                    ->sortable()
                     ->badge()
                     ->color(fn (int $state): string => match (true) {
                         $state === 0 => 'danger',
                         $state <= 10 => 'warning',
                         default => 'success',
-                    }),
+                    })
+                    ->alignCenter(),
 
                 TextColumn::make('price')
                     ->label('Prezzo')
-                    ->money('EUR'),
+                    ->money('EUR')
+                    ->sortable()
+                    ->alignCenter(),
 
                 TextColumn::make('average_rating')
                     ->label('Valutazione')
                     ->formatStateUsing(fn ($state): string => $state > 0 ? number_format($state, 1) . ' ⭐' : 'N/A')
-                    ->color('warning'),
+                    ->color('warning')
+                    ->alignCenter(),
             ])
             ->filters([
                 //
@@ -73,9 +77,11 @@ class PopularProducts extends TableWidget
                 //
             ])
             ->recordActions([
-                Action::make('view')
-                    ->label('Visualizza')
-                    ->icon('heroicon-o-eye')
+                Action::make('edit')
+                    ->hiddenLabel()
+                    ->icon('heroicon-o-pencil-square')
+                    ->size('lg')
+                    ->tooltip('Modifica')
                     ->url(fn (Product $record): string => route('filament.admin.resources.products.edit', $record)),
             ])
             ->toolbarActions([

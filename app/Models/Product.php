@@ -70,6 +70,10 @@ class Product extends Model
             if (empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
             }
+
+            if (empty($product->order)) {
+                $product->order = (static::max('order') ?? 0) + 1;
+            }
         });
 
         static::updating(function ($product) {

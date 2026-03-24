@@ -118,7 +118,7 @@ class VariantsRelationManager extends RelationManager
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Immagine')
                     ->circular()
-                    ->defaultImageUrl(url('/images/placeholder-product.png')),
+                    ->defaultImageUrl(url('/images/image-placeholder.jpg')),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nome Variante')

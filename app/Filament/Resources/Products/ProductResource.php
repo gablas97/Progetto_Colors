@@ -3,9 +3,6 @@
 namespace App\Filament\Resources\Products;
 
 use App\Filament\Resources\Products\Pages;
-use App\Filament\Resources\Products\RelationManagers\ImagesRelationManager;
-use App\Filament\Resources\Products\RelationManagers\ReviewsRelationManager;
-use App\Filament\Resources\Products\RelationManagers\VariantsRelationManager;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -32,6 +29,8 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -59,445 +58,572 @@ class ProductResource extends Resource
     {
         return $schema
             ->schema([
-                Group::make()
-                    ->schema([
-                        Section::make('Informazioni Prodotto')
+                Tabs::make()
+                    ->tabs([
+
+                        Tab::make('Informazioni')
+                            ->icon('heroicon-o-information-circle')
                             ->schema([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nome Prodotto')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function (?string $state, Set $set) {
-                                        $set('slug', Str::slug($state ?? ''));
-                                    }),
-
-                                Forms\Components\TextInput::make('slug')
-                                    ->label('Slug (URL)')
-                                    ->maxLength(255)
-                                    ->unique(ignoreRecord: true)
-                                    ->helperText('URL del prodotto, generato automaticamente'),
-
-                                Forms\Components\Textarea::make('short_description')
-                                    ->label('Descrizione Breve')
-                                    ->rows(2)
-                                    ->maxLength(255)
-                                    ->helperText('Apparirà nelle liste prodotti'),
-
-                                Forms\Components\RichEditor::make('description')
-                                    ->label('Descrizione Completa')
-                                    ->toolbarButtons([
-                                        'bold',
-                                        'italic',
-                                        'underline',
-                                        'bulletList',
-                                        'orderedList',
-                                        'link',
-                                        'undo',
-                                        'redo',
-                                    ])
-                                    ->columnSpanFull(),
-                            ]),
-
-                        Section::make('Immagini')
-                            ->schema([
-                                Forms\Components\FileUpload::make('main_image')
-                                    ->label('Immagine Principale')
-                                    ->image()
-                                    ->directory('products')
-                                    ->imageEditor()
-                                    ->imageEditorAspectRatioOptions([
-                                        '1:1',
-                                        '4:3',
-                                    ])
-                                    ->maxSize(2048)
-                                    ->helperText('Immagine principale del prodotto'),
-
-                                Forms\Components\Repeater::make('images')
-                                    ->label('Galleria Immagini')
-                                    ->relationship('images')
-                                    ->schema([
-                                        Forms\Components\FileUpload::make('image')
-                                            ->label('Immagine')
-                                            ->image()
-                                            ->directory('products/gallery')
-                                            ->imageEditor()
-                                            ->required()
-                                            ->maxSize(2048),
-
-                                        Forms\Components\TextInput::make('alt_text')
-                                            ->label('Testo Alternativo (SEO)')
-                                            ->maxLength(255),
-
-                                        Forms\Components\TextInput::make('order')
-                                            ->label('Ordine')
-                                            ->numeric()
-                                            ->default(0),
-                                    ])
-                                    ->orderColumn('order')
-                                    ->reorderable()
-                                    ->collapsible()
-                                    ->itemLabel(fn (array $state): ?string => $state['alt_text'] ?? 'Immagine')
-                                    ->columnSpanFull(),
-                            ]),
-
-                        Section::make('Varianti Prodotto')
-                            ->schema([
-                                Forms\Components\Repeater::make('variants')
-                                    ->label('Varianti')
-                                    ->relationship('variants')
+                                Section::make('Dati principali')
+                                    ->description('Nome e URL del prodotto nel sito.')
+                                    ->aside()
                                     ->schema([
                                         Forms\Components\TextInput::make('name')
-                                            ->label('Nome Variante')
+                                            ->label('Nome prodotto')
                                             ->required()
-                                            ->placeholder('es: Rosso, Blu, Large')
-                                            ->maxLength(255),
+                                            ->maxLength(255)
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function (?string $state, Set $set, Get $get) {
+                                                if (empty($get('sku'))) {
+                                                    $set('sku', strtoupper(Str::slug($state ?? '')));
+                                                }
+                                            }),
+                                    ]),
 
-                                        Forms\Components\TextInput::make('sku')
+                                Section::make('Descrizioni')
+                                    ->description('Testi mostrati nella pagina prodotto e nelle anteprime.')
+                                    ->aside()
+                                    ->schema([
+                                        Forms\Components\Textarea::make('short_description')
+                                            ->label('Descrizione breve')
+                                            ->rows(3)
+                                            ->maxLength(255)
+                                            ->helperText('Visibile nelle liste prodotti e come anteprima. Usata anche come meta description SEO se non specificata.'),
+
+                                        Forms\Components\RichEditor::make('description')
+                                            ->label('Descrizione completa')
+                                            ->toolbarButtons([
+                                                'bold', 'italic', 'underline',
+                                                'bulletList', 'orderedList',
+                                                'link', 'undo', 'redo',
+                                            ]),
+                                    ]),
+                            ]),
+
+                        Tab::make('Prezzi & Inventario')
+                            ->icon('heroicon-o-banknotes')
+                            ->schema([
+                                Section::make('Prezzi')
+                                    ->description('Definisci il prezzo di vendita e i riferimenti interni.')
+                                    ->aside()
+                                    ->schema([
+                                        TextInput::make('price')
+                                            ->label('Prezzo di vendita')
+                                            ->required()
+                                            ->numeric()
+                                            ->prefix('€')
+                                            ->minValue(0),
+
+                                        TextInput::make('compare_at_price')
+                                            ->label('Prezzo barrato')
+                                            ->numeric()
+                                            ->prefix('€')
+                                            ->helperText('Se compilato, viene mostrato come "era X €" per evidenziare lo sconto.'),
+
+                                        TextInput::make('cost')
+                                            ->label('Costo di acquisto')
+                                            ->numeric()
+                                            ->prefix('€')
+                                            ->helperText('Solo uso interno — serve per calcolare il margine. Non visibile ai clienti.'),
+
+                                        TextInput::make('vat_rate')
+                                            ->label('Aliquota IVA')
+                                            ->numeric()
+                                            ->default(22)
+                                            ->suffix('%')
+                                            ->minValue(0)
+                                            ->maxValue(100),
+                                    ]),
+
+                                Section::make('Inventario')
+                                    ->description('Codici identificativi e gestione delle scorte.')
+                                    ->aside()
+                                    ->schema([
+                                        TextInput::make('sku')
                                             ->label('Codice SKU')
-                                            ->required()
                                             ->unique(ignoreRecord: true)
-                                            ->maxLength(255),
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->helperText('Generato automaticamente dal nome del prodotto. Modificabile manualmente se necessario.'),
 
-                                        Forms\Components\TextInput::make('barcode')
-                                            ->label('Codice a Barre')
-                                            ->maxLength(255),
+                                        TextInput::make('barcode')
+                                            ->label('Codice a barre / EAN')
+                                            ->maxLength(255)
+                                            ->helperText('EAN-13 o codice personalizzato. Facoltativo.'),
 
-                                        Forms\Components\TextInput::make('stock_quantity')
-                                            ->label('Quantità Stock')
+                                        Toggle::make('manage_stock')
+                                            ->label('Gestione scorte attiva')
+                                            ->default(true)
+                                            ->live()
+                                            ->helperText('Disattiva per prodotti digitali o con disponibilità illimitata.'),
+
+                                        TextInput::make('stock_quantity')
+                                            ->label('Quantità in magazzino')
                                             ->numeric()
                                             ->default(0)
                                             ->required()
-                                            ->hidden(fn (Get $get) => ! $get('/manage_stock')),
+                                            ->hidden(fn (Get $get) => ! $get('manage_stock')),
 
-                                        Forms\Components\FileUpload::make('image')
-                                            ->label('Immagine Variante')
-                                            ->image()
-                                            ->directory('products/variants')
-                                            ->maxSize(1024),
-
-                                        Forms\Components\TextInput::make('order')
-                                            ->label('Ordine')
+                                        TextInput::make('low_stock_threshold')
+                                            ->label('Soglia scorta bassa')
                                             ->numeric()
-                                            ->default(0),
+                                            ->default(10)
+                                            ->helperText('Riceverai una notifica quando la quantità scende sotto questo valore.')
+                                            ->hidden(fn (Get $get) => ! $get('manage_stock')),
+                                    ]),
+                            ]),
 
+                        Tab::make('Organizzazione')
+                            ->icon('heroicon-o-tag')
+                            ->schema([
+                                Section::make('Classificazione')
+                                    ->description('Categorie e brand a cui appartiene il prodotto.')
+                                    ->aside()
+                                    ->schema([
+                                        Select::make('categories')
+                                            ->label('Categorie')
+                                            ->relationship('categories', 'name')
+                                            ->multiple()
+                                            ->preload()
+                                            ->searchable()
+                                            ->required()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->label('Nome')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                                Forms\Components\Textarea::make('description')
+                                                    ->label('Descrizione')
+                                                    ->rows(2),
+                                            ])
+                                            ->createOptionUsing(fn (array $data) => Category::create($data)->getKey()),
+
+                                        Select::make('brand_id')
+                                            ->label('Brand')
+                                            ->relationship('brand', 'name')
+                                            ->searchable()
+                                            ->preload()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->label('Nome')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                                Forms\Components\TextInput::make('website')
+                                                    ->label('Sito Web')
+                                                    ->url()
+                                                    ->maxLength(255),
+                                                Forms\Components\Textarea::make('description')
+                                                    ->label('Descrizione')
+                                                    ->rows(2),
+                                            ])
+                                            ->createOptionUsing(fn (array $data) => Brand::create($data)->getKey()),
+                                    ]),
+
+                                Section::make('Dettagli fisici')
+                                    ->description('Peso e dimensioni — usati per calcolare i costi di spedizione.')
+                                    ->aside()
+                                    ->schema([
+                                        TextInput::make('weight')
+                                            ->label('Peso')
+                                            ->numeric()
+                                            ->suffix('g')
+                                            ->helperText('Inserisci il peso in grammi.'),
+
+                                        TextInput::make('dimensions')
+                                            ->label('Dimensioni')
+                                            ->placeholder('es: 30x20x10')
+                                            ->helperText('Lunghezza × Larghezza × Altezza in cm.'),
+                                    ]),
+
+                                Section::make('Visibilità')
+                                    ->description('Controlla dove e come appare il prodotto sul sito.')
+                                    ->aside()
+                                    ->schema([
                                         Forms\Components\Toggle::make('is_active')
-                                            ->label('Attiva')
-                                            ->default(true),
-                                    ])
-                                    ->orderColumn('order')
-                                    ->collapsible()
-                                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Nuova Variante')
-                                    ->columns(2)
-                                    ->columnSpanFull(),
-                            ])
-                    ])
-                    ->columnSpan(['lg' => 2]),
+                                            ->label('Prodotto attivo')
+                                            ->default(true)
+                                            ->live()
+                                            ->helperText('Se disattivato, il prodotto non sarà visibile ai clienti.')
+                                            ->afterStateUpdated(function (bool $state, Set $set) {
+                                                if (! $state) {
+                                                    $set('is_featured', false);
+                                                }
+                                            }),
 
-                Group::make()
-                    ->schema([
-                        Section::make('Prezzi')
-                            ->schema([
-                                TextInput::make('price')
-                                    ->label('Prezzo')
-                                    ->required()
-                                    ->numeric()
-                                    ->prefix('€')
-                                    ->step(0.01)
-                                    ->minValue(0),
+                                        Forms\Components\Toggle::make('is_featured')
+                                            ->label('In evidenza')
+                                            ->default(false)
+                                            ->disabled(fn (Get $get) => ! $get('is_active'))
+                                            ->helperText(fn (Get $get) => ! $get('is_active')
+                                                ? 'Attiva il prodotto per poterlo mettere in evidenza.'
+                                                : 'Mostrato in homepage e nelle sezioni "Prodotti in evidenza".'),
 
-                                TextInput::make('compare_at_price')
-                                    ->label('Prezzo di Confronto')
-                                    ->numeric()
-                                    ->prefix('€')
-                                    ->step(0.01)
-                                    ->helperText('Prezzo originale per mostrare sconto'),
-
-                                TextInput::make('cost')
-                                    ->label('Costo di Acquisto')
-                                    ->numeric()
-                                    ->prefix('€')
-                                    ->step(0.01)
-                                    ->helperText('Tuo costo (per calcolare margine)'),
-
-                                TextInput::make('vat_rate')
-                                    ->label('Aliquota IVA (%)')
-                                    ->numeric()
-                                    ->default(22)
-                                    ->suffix('%')
-                                    ->minValue(0)
-                                    ->maxValue(100),
+                                    ]),
                             ]),
 
-                        Section::make('Inventario')
+                        Tab::make('Immagini')
+                            ->icon('heroicon-o-photo')
                             ->schema([
-                                TextInput::make('sku')
-                                    ->label('Codice SKU')
-                                    ->unique(ignoreRecord: true)
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->helperText('Codice univoco del prodotto'),
-
-                                TextInput::make('barcode')
-                                    ->label('Codice a Barre')
-                                    ->maxLength(255),
-
-                                Toggle::make('manage_stock')
-                                    ->label('Gestisci Inventario')
-                                    ->default(true)
-                                    ->live()
-                                    ->helperText('Attiva per tracciare quantità'),
-
-                                TextInput::make('stock_quantity')
-                                    ->label('Quantità Stock')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->required()
-                                    ->hidden(fn (Get $get) => !$get('manage_stock')),
-
-                                TextInput::make('low_stock_threshold')
-                                    ->label('Soglia Stock Basso')
-                                    ->numeric()
-                                    ->default(10)
-                                    ->helperText('Alert sotto questa quantità')
-                                    ->hidden(fn (Get $get) => !$get('manage_stock')),
-                            ]),
-
-                        Section::make('Organizzazione')
-                            ->schema([
-                                Select::make('categories')
-                                    ->label('Categorie')
-                                    ->relationship('categories', 'name')
-                                    ->multiple()
-                                    ->preload()
-                                    ->searchable()
-                                    ->required()
-                                    ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('Nome')
+                                Section::make('Immagine principale')
+                                    ->description('Immagine mostrata nella lista prodotti e in cima alla pagina prodotto.')
+                                    ->aside()
+                                    ->schema([
+                                        Forms\Components\FileUpload::make('main_image')
+                                            ->label('Immagine principale')
+                                            ->image()
                                             ->required()
-                                            ->maxLength(255),
-                                        Forms\Components\Textarea::make('description')
-                                            ->label('Descrizione')
-                                            ->rows(2),
-                                    ])
-                                    ->createOptionUsing(fn (array $data) => Category::create($data)->getKey()),
+                                            ->directory('products')
+                                            ->imageEditor()
+                                            ->imageEditorAspectRatioOptions(['1:1', '4:3'])
+                                            ->maxSize(2048)
+                                            ->helperText('Formato consigliato: 800×800px · Max 2 MB.'),
+                                    ]),
 
-                                Select::make('brand_id')
-                                    ->label('Brand')
-                                    ->relationship('brand', 'name')
-                                    ->searchable()
-                                    ->preload()
-                                    ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('Nome')
-                                            ->required()
-                                            ->maxLength(255),
-                                        Forms\Components\TextInput::make('website')
-                                            ->label('Sito Web')
-                                            ->url()
-                                            ->maxLength(255),
-                                        Forms\Components\Textarea::make('description')
-                                            ->label('Descrizione')
-                                            ->rows(2),
-                                    ])
-                                    ->createOptionUsing(fn (array $data) => Brand::create($data)->getKey()),
+                                Section::make('Galleria immagini')
+                                    ->description('Immagini aggiuntive mostrate nel carosello della pagina prodotto.')
+                                    ->aside()
+                                    ->schema([
+                                        Forms\Components\Repeater::make('images')
+                                            ->label('Immagini')
+                                            ->relationship('images')
+                                            ->schema([
+                                                Forms\Components\FileUpload::make('image')
+                                                    ->label('Immagine')
+                                                    ->image()
+                                                    ->directory('products/gallery')
+                                                    ->imageEditor()
+                                                    ->required()
+                                                    ->maxSize(2048)
+                                                    ->columnSpanFull(),
 
-                                TextInput::make('weight')
-                                    ->label('Peso')
-                                    ->numeric()
-                                    ->suffix('g'),
+                                                Forms\Components\TextInput::make('alt_text')
+                                                    ->label('Testo alternativo')
+                                                    ->maxLength(255)
+                                                    ->helperText('Breve descrizione dell\'immagine (accessibilità e SEO).'),
 
-                                TextInput::make('dimensions')
-                                    ->label('Dimensioni')
-                                    ->placeholder('LxWxH cm'),
-
-                                Forms\Components\Toggle::make('is_active')
-                                    ->label('Prodotto Attivo')
-                                    ->default(true)
-                                    ->live()
-                                    ->afterStateUpdated(function (bool $state, Set $set) {
-                                        if (! $state) {
-                                            $set('is_featured', false);
-                                        }
-                                    }),
-
-                                Forms\Components\Toggle::make('is_featured')
-                                    ->label('In Evidenza')
-                                    ->default(false)
-                                    ->disabled(fn (Get $get) => ! $get('is_active'))
-                                    ->helperText(fn (Get $get) => ! $get('is_active')
-                                        ? 'Attiva il prodotto per poterlo mettere in evidenza'
-                                        : 'Mostra in homepage'),
-
-                                Forms\Components\TextInput::make('order')
-                                    ->label('Ordine')
-                                    ->numeric()
-                                    ->default(0),
+                                                Forms\Components\TextInput::make('order')
+                                                    ->label('Ordine')
+                                                    ->numeric()
+                                                    ->default(0),
+                                            ])
+                                            ->orderColumn('order')
+                                            ->reorderable()
+                                            ->defaultItems(0)
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string => $state['alt_text'] ?? 'Immagine')
+                                            ->columns(3)
+                                            ->addActionLabel('Aggiungi immagine'),
+                                    ]),
                             ]),
 
-                        Section::make('SEO')
+                        Tab::make('Varianti')
+                            ->icon('heroicon-o-squares-2x2')
                             ->schema([
-                                Forms\Components\TextInput::make('meta_title')
-                                    ->label('Meta Titolo')
-                                    ->maxLength(60)
-                                    ->helperText('Max 60 caratteri'),
+                                Section::make('Varianti prodotto')
+                                    ->description('Versioni dello stesso prodotto con caratteristiche diverse (colore, formato, taglia, ecc.). Lascia vuoto se il prodotto non ha varianti.')
+                                    ->aside()
+                                    ->schema([
+                                        Forms\Components\Repeater::make('variants')
+                                            ->label('Varianti')
+                                            ->relationship('variants')
+                                            ->schema([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->label('Nome variante')
+                                                    ->required()
+                                                    ->placeholder('es: Rosso, 500ml, Large')
+                                                    ->maxLength(255),
 
-                                Forms\Components\Textarea::make('meta_description')
-                                    ->label('Meta Descrizione')
-                                    ->rows(2)
-                                    ->maxLength(160)
-                                    ->helperText('Max 160 caratteri'),
+                                                Forms\Components\TextInput::make('sku')
+                                                    ->label('SKU variante')
+                                                    ->required()
+                                                    ->unique(ignoreRecord: true)
+                                                    ->maxLength(255),
 
-                                Forms\Components\TagsInput::make('meta_keywords')
-                                    ->label('Keywords')
-                                    ->separator(',')
-                                    ->helperText('Parole chiave separate da virgola'),
-                            ])
-                            ->collapsed(),
+                                                Forms\Components\TextInput::make('barcode')
+                                                    ->label('Codice a barre')
+                                                    ->maxLength(255),
+
+                                                Forms\Components\TextInput::make('stock_quantity')
+                                                    ->label('Quantità')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->required()
+                                                    ->hidden(fn (Get $get) => ! $get('/manage_stock')),
+
+                                                Forms\Components\FileUpload::make('image')
+                                                    ->label('Immagine variante')
+                                                    ->image()
+                                                    ->directory('products/variants')
+                                                    ->maxSize(1024),
+
+                                                Forms\Components\TextInput::make('order')
+                                                    ->label('Ordine')
+                                                    ->numeric()
+                                                    ->default(0),
+
+                                                Forms\Components\Toggle::make('is_active')
+                                                    ->label('Attiva')
+                                                    ->default(true),
+                                            ])
+                                            ->orderColumn('order')
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Nuova variante')
+                                            ->columns(2)
+                                            ->defaultItems(0)
+                                            ->addActionLabel('Aggiungi variante'),
+                                    ]),
+                            ]),
+
+
                     ])
-                    ->columnSpan(['lg' => 1]),
-            ])
-            ->columns(3);
+                    ->columnSpanFull(),
+            ]);
     }
 
     public static function infolist(Schema $schema): Schema
     {
         return $schema->schema([
-            Group::make([
-                Section::make('Informazioni')->schema([
-                    ImageEntry::make('main_image')
-                        ->label('Immagine Principale')
-                        ->imageHeight(200)
-                        ->columnSpanFull(),
+            Tabs::make()
+                ->tabs([
 
-                    TextEntry::make('name')
-                        ->label('Nome Prodotto'),
-
-                    TextEntry::make('sku')
-                        ->label('Codice SKU'),
-
-                    TextEntry::make('barcode')
-                        ->label('Codice a Barre')
-                        ->placeholder('—'),
-
-                    TextEntry::make('slug')
-                        ->label('Slug URL'),
-                ])->columns(2),
-
-                Section::make('Descrizione')->schema([
-                    TextEntry::make('short_description')
-                        ->label('Descrizione Breve')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
-
-                    TextEntry::make('description')
-                        ->label('Descrizione Completa')
-                        ->html()
-                        ->placeholder('—')
-                        ->columnSpanFull(),
-                ]),
-
-                Section::make('Varianti')->schema([
-                    RepeatableEntry::make('variants')
-                        ->label('')
+                    Tab::make('Panoramica')
+                        ->icon('heroicon-o-information-circle')
                         ->schema([
-                            TextEntry::make('name')->label('Variante'),
-                            TextEntry::make('sku')->label('SKU'),
-                            TextEntry::make('barcode')->label('Barcode')->placeholder('—'),
-                            TextEntry::make('stock_quantity')
-                                ->label('Stock')
-                                ->formatStateUsing(fn ($state, $record): string =>
-                                    $record->product?->manage_stock ? ($state ?? '0') : '—'
-                                ),
-                            IconEntry::make('is_active')->label('Attiva')->boolean(),
-                        ])
-                        ->columns(5)
-                        ->columnSpanFull(),
-                ])->collapsible(),
-            ])->columnSpan(2),
+                            Group::make([
+                                Section::make('Dettagli')->icon('heroicon-o-information-circle')->iconColor('primary')->schema([
+                                    ImageEntry::make('main_image')
+                                        ->label('Immagine principale')
+                                        ->imageHeight(220)
+                                        ->columnSpanFull()
+                                        ->placeholder('—'),
 
-            Group::make([
-                Section::make('Prezzi')->schema([
-                    TextEntry::make('price')
-                        ->label('Prezzo')
-                        ->money('EUR'),
+                                    TextEntry::make('name')
+                                        ->label('Nome')
+                                        ->weight('bold')
+                                        ->size('lg'),
 
-                    TextEntry::make('compare_at_price')
-                        ->label('Prezzo di Confronto')
-                        ->money('EUR')
-                        ->placeholder('—'),
+                                    TextEntry::make('sku')
+                                        ->label('SKU')
+                                        ->badge()
+                                        ->color('gray'),
 
-                    TextEntry::make('cost')
-                        ->label('Costo Acquisto')
-                        ->money('EUR')
-                        ->placeholder('—'),
+                                    TextEntry::make('categories.name')
+                                        ->label('Categorie')
+                                        ->badge()
+                                        ->separator(', '),
 
-                    TextEntry::make('vat_rate')
-                        ->label('Aliquota IVA')
-                        ->suffix('%'),
+                                    TextEntry::make('brand.name')
+                                        ->label('Brand')
+                                        ->color('primary')
+                                        ->placeholder('—'),
 
-                    TextEntry::make('margin')
-                        ->label('Margine')
-                        ->suffix('%')
-                        ->placeholder('—'),
-                ]),
+                                    IconEntry::make('is_active')
+                                        ->label('Attivo')
+                                        ->boolean()
+                                        ->trueColor('success')
+                                        ->falseColor('danger'),
 
-                Section::make('Inventario')->schema([
-                    IconEntry::make('manage_stock')
-                        ->label('Gestione Stock')
-                        ->boolean(),
+                                    IconEntry::make('is_featured')
+                                        ->label('In evidenza')
+                                        ->boolean()
+                                        ->trueColor('warning')
+                                        ->falseColor('gray'),
+                                ])->columns(2),
 
-                    TextEntry::make('stock_quantity')
-                        ->label('Giacenza'),
+                                Section::make('Descrizioni')->icon('heroicon-o-document-text')->iconColor('gray')->schema([
+                                    TextEntry::make('short_description')
+                                        ->label('Breve')
+                                        ->placeholder('—')
+                                        ->columnSpanFull(),
 
-                    TextEntry::make('low_stock_threshold')
-                        ->label('Soglia Stock Basso'),
+                                    TextEntry::make('description')
+                                        ->label('Completa')
+                                        ->html()
+                                        ->placeholder('—')
+                                        ->columnSpanFull(),
+                                ]),
 
-                    TextEntry::make('weight')
-                        ->label('Peso')
-                        ->suffix(' g')
-                        ->placeholder('—'),
+                                Section::make('Prezzi')->icon('heroicon-o-currency-euro')->iconColor('success')->schema([
+                                    TextEntry::make('price')
+                                        ->label('Prezzo finale')
+                                        ->money('EUR')
+                                        ->weight('bold')
+                                        ->color('success'),
 
-                    TextEntry::make('dimensions')
-                        ->label('Dimensioni')
-                        ->placeholder('—'),
-                ]),
+                                    TextEntry::make('compare_at_price')
+                                        ->label('Prezzo originale')
+                                        ->money('EUR')
+                                        ->placeholder('—'),
 
-                Section::make('Stato & Organizzazione')->schema([
-                    IconEntry::make('is_active')
-                        ->label('Attivo')
-                        ->boolean(),
+                                    TextEntry::make('cost')
+                                        ->label('Costo acquisto')
+                                        ->money('EUR')
+                                        ->placeholder('—'),
 
-                    IconEntry::make('is_featured')
-                        ->label('In Evidenza')
-                        ->boolean(),
+                                    TextEntry::make('vat_rate')
+                                        ->label('IVA')
+                                        ->suffix('%'),
+                                ])->columns(4),
+                            ])->columnSpan(2),
 
-                    TextEntry::make('brand.name')
-                        ->label('Brand')
-                        ->placeholder('—'),
+                            Group::make([
+                                Section::make('Scorte')->icon('heroicon-o-archive-box')->iconColor('warning')->schema([
+                                    TextEntry::make('stock_quantity')
+                                        ->label('Giacenza')
+                                        ->badge()
+                                        ->color(fn (Product $record): string => match (true) {
+                                            ! $record->manage_stock => 'gray',
+                                            $record->stock_quantity === 0 => 'danger',
+                                            $record->stock_quantity <= $record->low_stock_threshold => 'warning',
+                                            default => 'success',
+                                        })
+                                        ->formatStateUsing(fn (Product $record): string =>
+                                            $record->manage_stock ? $record->stock_quantity . ' pz' : 'Non tracciato'
+                                        ),
 
-                    TextEntry::make('categories.name')
-                        ->label('Categorie')
-                        ->badge()
-                        ->separator(', '),
-                ]),
+                                    TextEntry::make('low_stock_threshold')
+                                        ->label('Soglia bassa')
+                                        ->placeholder('—'),
 
-                Section::make('SEO')->schema([
-                    TextEntry::make('meta_title')
-                        ->label('Meta Titolo')
-                        ->placeholder('—'),
+                                    TextEntry::make('weight')
+                                        ->label('Peso')
+                                        ->suffix(' g')
+                                        ->placeholder('—'),
 
-                    TextEntry::make('meta_description')
-                        ->label('Meta Descrizione')
-                        ->placeholder('—'),
+                                    TextEntry::make('dimensions')
+                                        ->label('Dimensioni')
+                                        ->placeholder('—'),
+                                ]),
 
-                    TextEntry::make('meta_keywords')
-                        ->label('Keywords')
-                        ->placeholder('—'),
-                ])->collapsible()->collapsed(),
-            ])->columnSpan(1),
-        ])->columns(3);
+                                Section::make('Statistiche')->icon('heroicon-o-chart-bar')->iconColor('info')->schema([
+                                    TextEntry::make('average_rating')
+                                        ->label('Rating')
+                                        ->formatStateUsing(fn ($state): string =>
+                                            $state > 0 ? number_format($state, 1) . ' / 5 ★' : '—'
+                                        ),
+
+                                    TextEntry::make('reviews_count')
+                                        ->label('Recensioni')
+                                        ->numeric(),
+
+                                    TextEntry::make('sales_count')
+                                        ->label('Vendute')
+                                        ->numeric(),
+
+                                    TextEntry::make('views_count')
+                                        ->label('Visualizzazioni')
+                                        ->numeric(),
+                                ])->columns(2),
+                            ])->columnSpan(1),
+                        ])->columns(3),
+
+                    Tab::make('Varianti')
+                        ->icon('heroicon-o-squares-2x2')
+                        ->schema([
+                            Section::make('Varianti prodotto')->icon('heroicon-o-squares-2x2')->iconColor('primary')->schema([
+                                RepeatableEntry::make('variants')
+                                    ->label('Varianti')
+                                    ->placeholder('—')
+                                    ->schema([
+                                        TextEntry::make('name')
+                                            ->label('Variante')
+                                            ->weight('medium'),
+
+                                        TextEntry::make('sku')
+                                            ->label('SKU')
+                                            ->badge()
+                                            ->color('gray'),
+
+                                        TextEntry::make('barcode')
+                                            ->label('Barcode')
+                                            ->placeholder('—'),
+
+                                        TextEntry::make('stock_quantity')
+                                            ->label('Stock')
+                                            ->badge()
+                                            ->color(fn ($state): string => $state > 0 ? 'success' : 'danger'),
+
+                                        IconEntry::make('is_active')
+                                            ->label('Attiva')
+                                            ->boolean()
+                                            ->trueColor('success')
+                                            ->falseColor('danger'),
+                                    ])
+                                    ->columns(5)
+                                    ->columnSpanFull(),
+                            ]),
+                        ]),
+
+                    Tab::make('Recensioni')
+                        ->icon('heroicon-o-star')
+                        ->schema([
+                            Section::make('Recensioni clienti')->icon('heroicon-o-star')->iconColor('warning')->schema([
+                                RepeatableEntry::make('reviews')
+                                    ->label('Recensioni')
+                                    ->placeholder('—')
+                                    ->schema([
+                                        TextEntry::make('user.full_name')
+                                            ->label('Cliente'),
+
+                                        TextEntry::make('rating')
+                                            ->label('Voto')
+                                            ->badge()
+                                            ->color(fn ($state): string => match (true) {
+                                                $state >= 4 => 'success',
+                                                $state >= 3 => 'warning',
+                                                default     => 'danger',
+                                            })
+                                            ->formatStateUsing(fn ($state): string => $state . ' ★'),
+
+                                        TextEntry::make('title')
+                                            ->label('Titolo')
+                                            ->placeholder('—'),
+
+                                        TextEntry::make('comment')
+                                            ->label('Testo')
+                                            ->placeholder('—')
+                                            ->limit(120),
+
+                                        IconEntry::make('is_approved')
+                                            ->label('Approvata')
+                                            ->boolean()
+                                            ->trueColor('success')
+                                            ->falseColor('warning'),
+
+                                        TextEntry::make('created_at')
+                                            ->label('Data')
+                                            ->dateTime('d/m/Y'),
+                                    ])
+                                    ->columns(3)
+                                    ->columnSpanFull(),
+                            ]),
+                        ]),
+
+                    Tab::make('SEO')
+                        ->icon('heroicon-o-magnifying-glass')
+                        ->schema([
+                            Section::make('SEO & URL')->icon('heroicon-o-magnifying-glass')->iconColor('gray')->schema([
+                                TextEntry::make('meta_title')
+                                    ->label('Titolo SEO')
+                                    ->placeholder('(auto-generato)'),
+
+                                TextEntry::make('meta_description')
+                                    ->label('Descrizione SEO')
+                                    ->placeholder('(auto-generata)'),
+
+                                TextEntry::make('meta_keywords')
+                                    ->label('Parole chiave')
+                                    ->placeholder('—'),
+
+                                TextEntry::make('slug')
+                                    ->label('URL prodotto')
+                                    ->prefix('/prodotti/'),
+                            ])->columns(2),
+                        ]),
+
+                ])
+                ->columnSpanFull(),
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -507,7 +633,7 @@ class ProductResource extends Resource
                 Tables\Columns\ImageColumn::make('main_image')
                     ->label('Immagine')
                     ->square()
-                    ->defaultImageUrl(url('/images/placeholder-product.png'))
+                    ->defaultImageUrl(url('/images/image-placeholder.jpg'))
                     ->alignCenter()
                     ->toggleable(isToggledHiddenByDefault: false),
 
@@ -571,13 +697,36 @@ class ProductResource extends Resource
                     ->alignCenter()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                Tables\Columns\TextColumn::make('average_rating')
+                    ->label('Rating')
+                    ->formatStateUsing(fn ($state): string => $state > 0 ? number_format($state, 1) . ' ★' : '—')
+                    ->sortable()
+                    ->alignCenter()
+                    ->color(fn ($state): string => $state >= 4 ? 'success' : ($state >= 2.5 ? 'warning' : 'gray'))
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('reviews_count')
+                    ->label('Recensioni')
+                    ->numeric()
+                    ->sortable()
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('sales_count')
+                    ->label('Vendite')
+                    ->numeric()
+                    ->sortable()
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creato il')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('id', 'asc')
+            ->reorderable('order')
+            ->defaultSort('order', 'asc')
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Stato')
@@ -590,6 +739,12 @@ class ProductResource extends Resource
                     ->placeholder('Tutti')
                     ->trueLabel('Solo in evidenza')
                     ->falseLabel('Non in evidenza'),
+
+                Tables\Filters\SelectFilter::make('brand_id')
+                    ->label('Marca')
+                    ->placeholder('Tutte')
+                    ->relationship('brand', 'name')
+                    ->preload(),
 
                 Tables\Filters\SelectFilter::make('categories')
                     ->label('Categoria')
@@ -607,10 +762,10 @@ class ProductResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->outOfStock()),
 
                 Tables\Filters\TrashedFilter::make()
-                    ->label('Prodotti eliminati')
-                    ->placeholder('Solo attivi')
-                    ->trueLabel('Tutti')
-                    ->falseLabel('Solo eliminati'),
+                    ->label('Mostra Eliminati')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminati'),
             ])
             ->recordUrl(null)
             ->recordAction('view')
@@ -690,11 +845,7 @@ class ProductResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            VariantsRelationManager::class,
-            ImagesRelationManager::class,
-            ReviewsRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array

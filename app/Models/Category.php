@@ -22,6 +22,8 @@ class Category extends Model
         'image',
         'order',
         'is_active',
+        'meta_title',
+        'meta_description',
     ];
 
     protected $casts = [

@@ -9,7 +9,7 @@ use Filament\Widgets\ChartWidget;
 
 class RevenueChart extends ChartWidget
 {
-    protected ?string $heading = 'Andamento Fatturato';
+    protected ?string $heading = '📈 Andamento Fatturato';
 
     protected static ?int $sort = 2;
 

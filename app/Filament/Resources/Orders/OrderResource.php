@@ -11,9 +11,14 @@ use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportAction;
 use Filament\Actions\ExportBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
@@ -21,6 +26,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -45,6 +51,7 @@ class OrderResource extends Resource
     {
         return $schema->components([
             Section::make('Informazioni Ordine')
+                ->icon('heroicon-o-shopping-bag')->iconColor('primary')
                 ->schema([
                     TextEntry::make('order_number')
                         ->label('Numero Ordine')
@@ -57,11 +64,13 @@ class OrderResource extends Resource
                         ->dateTime('d/m/Y H:i'),
 
                     TextEntry::make('shipping_full_name')
-                        ->label('Cliente'),
+                        ->label('Cliente')
+                        ->weight('bold'),
 
                     TextEntry::make('customer_email')
                         ->label('Email')
-                        ->copyable(),
+                        ->copyable()
+                        ->color('primary'),
 
                     TextEntry::make('status')
                         ->label('Stato Ordine')
@@ -110,9 +119,10 @@ class OrderResource extends Resource
                             default => $state ?? '—',
                         }),
                 ])
-                ->columns(2),
+                ->columns(3)->columnSpanFull(),
 
             Section::make('Indirizzo Spedizione')
+                ->icon('heroicon-o-map-pin')->iconColor('info')
                 ->schema([
                     TextEntry::make('shipping_full_name')->label('Destinatario'),
                     TextEntry::make('shipping_company')->label('Azienda')->placeholder('N/A'),
@@ -122,32 +132,34 @@ class OrderResource extends Resource
                     TextEntry::make('shipping_postal_code')->label('CAP'),
                     TextEntry::make('shipping_phone')->label('Telefono')->placeholder('N/A'),
                 ])
-                ->columns(2)
-                ->collapsed(),
+                ->columns(3)->columnSpanFull(),
 
             Section::make('Articoli Ordinati')
+                ->icon('heroicon-o-shopping-cart')->iconColor('primary')
                 ->schema([
                     RepeatableEntry::make('items')
-                        ->label('')
+                        ->label('Prodotti')
                         ->schema([
-                            TextEntry::make('full_product_name')->label('Prodotto'),
-                            TextEntry::make('product_sku')->label('SKU'),
-                            TextEntry::make('price')->label('Prezzo')->money('EUR'),
+                            TextEntry::make('full_product_name')->label('Prodotto')->weight('medium'),
+                            TextEntry::make('product_sku')->label('SKU')->badge()->color('gray'),
+                            TextEntry::make('price')->label('Prezzo')->money('EUR')->color('gray'),
                             TextEntry::make('quantity')->label('Qta'),
-                            TextEntry::make('total')->label('Totale')->money('EUR'),
+                            TextEntry::make('total')->label('Totale')->money('EUR')->weight('bold'),
                         ])
-                        ->columns(5),
-                ]),
+                        ->columns(5)->columnSpanFull(),
+                ])->columns(3)->columnSpanFull(),
 
             Section::make('Riepilogo Importi')
+                ->icon('heroicon-o-currency-euro')->iconColor('success')
                 ->schema([
-                    TextEntry::make('subtotal')->label('Subtotale')->money('EUR'),
+                    TextEntry::make('subtotal')->label('Subtotale')->money('EUR')->color('gray'),
                     TextEntry::make('discount_amount')
                         ->label('Sconto')
                         ->money('EUR')
+                        ->color('danger')
                         ->visible(fn ($record) => $record->discount_amount > 0),
-                    TextEntry::make('shipping_cost')->label('Spedizione')->money('EUR'),
-                    TextEntry::make('tax_amount')->label('IVA')->money('EUR'),
+                    TextEntry::make('shipping_cost')->label('Spedizione')->money('EUR')->color('gray'),
+                    TextEntry::make('tax_amount')->label('IVA')->money('EUR')->color('gray'),
                     TextEntry::make('total')
                         ->label('TOTALE')
                         ->money('EUR')
@@ -155,15 +167,15 @@ class OrderResource extends Resource
                         ->weight('bold')
                         ->color('success'),
                 ])
-                ->columns(2),
+                ->columns(5)->columnSpanFull(),
 
             Section::make('Note')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
                 ->schema([
                     TextEntry::make('notes')->label('Note Cliente')->placeholder('Nessuna nota'),
                     TextEntry::make('admin_notes')->label('Note Admin')->placeholder('Nessuna nota'),
                 ])
-                ->columns(2)
-                ->collapsed(),
+                ->columns(2)->columnSpanFull(),
         ]);
     }
 
@@ -172,23 +184,19 @@ class OrderResource extends Resource
         return $schema
             ->schema([
                 Section::make('Informazioni Ordine')
+                    ->icon('heroicon-o-shopping-bag')->iconColor('primary')
+                    ->aside()
                     ->schema([
                         Forms\Components\TextInput::make('order_number')
                             ->label('Numero Ordine')
                             ->disabled()
                             ->dehydrated(false),
 
-                        Forms\Components\Select::make('user_id')
+                        Forms\Components\TextInput::make('customer_email_display')
                             ->label('Cliente')
-                            ->relationship('user', 'email')
-                            ->preload()
-                            ->disabled(),
-
-                        Forms\Components\TextInput::make('guest_email')
-                            ->label('Email Guest')
-                            ->email()
-                            ->visible(fn ($record) => !$record?->user_id)
-                            ->disabled(),
+                            ->afterStateHydrated(fn ($component, $record) => $component->state($record?->customer_email ?? '—'))
+                            ->disabled()
+                            ->dehydrated(false),
 
                         Forms\Components\Select::make('status')
                             ->label('Stato Ordine')
@@ -199,7 +207,12 @@ class OrderResource extends Resource
                                 'delivered' => 'Consegnato',
                                 'cancelled' => 'Annullato',
                             ])
-                            ->disableOptionWhen(fn (string $value): bool => $value === 'delivered' || $value === 'cancelled'),
+                            ->disableOptionWhen(fn (string $value, Get $get): bool => match ($value) {
+                                'shipped'   => $get('payment_status') !== 'paid',
+                                'delivered' => true,
+                                'cancelled' => true,
+                                default     => false,
+                            }),
 
                         Forms\Components\Select::make('payment_status')
                             ->label('Stato Pagamento')
@@ -211,18 +224,22 @@ class OrderResource extends Resource
                             ])
                             ->disabled(),
 
-                        Forms\Components\Select::make('payment_method')
+                        Forms\Components\TextInput::make('payment_method_display')
                             ->label('Metodo Pagamento')
-                            ->options([
+                            ->afterStateHydrated(fn ($component, $record) => $component->state(match ($record?->payment_method) {
                                 'credit_card' => 'Carta di Credito',
                                 'paypal' => 'PayPal',
                                 'bank_transfer' => 'Bonifico Bancario',
-                            ])
-                            ->disabled(),
+                                default => $record?->payment_method ?? '—',
+                            }))
+                            ->disabled()
+                            ->dehydrated(false),
                     ])
-                    ->columns(2),
+                    ->columns(2)->columnSpanFull(),
 
                 Section::make('Importi')
+                    ->icon('heroicon-o-currency-euro')->iconColor('success')
+                    ->aside()
                     ->schema([
                         Forms\Components\TextInput::make('subtotal')
                             ->label('Subtotale')
@@ -254,9 +271,11 @@ class OrderResource extends Resource
                             ->prefix('€')
                             ->disabled(),
                     ])
-                    ->columns(3),
+                    ->columns(5)->columnSpanFull(),
 
                 Section::make('Note')
+                    ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                    ->aside()
                     ->schema([
                         Forms\Components\Textarea::make('notes')
                             ->label('Note Cliente')
@@ -267,7 +286,7 @@ class OrderResource extends Resource
                             ->label('Note Admin')
                             ->rows(2),
                     ])
-                    ->columns(2)
+                    ->columns(2)->columnSpanFull()
                     ->collapsible(),
             ]);
     }
@@ -348,9 +367,8 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('items_count')
                     ->label('Articoli')
                     ->counts('items')
-                    ->badge()
-                    ->color('primary')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Data')
@@ -401,6 +419,11 @@ class OrderResource extends Resource
                                 fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Mostra Eliminati')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminati'),
             ])
             ->recordUrl(null)
             ->recordAction(ViewAction::class)
@@ -414,6 +437,8 @@ class OrderResource extends Resource
                         ->label('Gestisci')
                         ->icon('heroicon-o-cog-6-tooth')
                         ->color('info'),
+                    RestoreAction::make()->label('Ripristina'),
+                    DeleteAction::make()->label('Elimina'),
                     
                     Action::make('download_invoice')
                         ->label('Scarica Fattura')
@@ -442,8 +467,12 @@ class OrderResource extends Resource
                                 return;
                             }
                             $record->markAsShipped();
+                            \Filament\Notifications\Notification::make()
+                                ->title('Ordine segnato come spedito')
+                                ->success()
+                                ->send();
                         })
-                        ->successNotificationTitle('Ordine segnato come spedito'),
+                        ->successNotification(null),
                     
                     Action::make('mark_as_delivered')
                         ->label('Segna come Consegnato')
@@ -457,9 +486,13 @@ class OrderResource extends Resource
             ])
             ->toolbarActions([
                 ExportBulkAction::make()
-                        ->label('Esporta Selezionati')
-                        ->icon('heroicon-o-arrow-down-tray')
-                        ->exporter(OrderExporter::class),
+                    ->label('Esporta Selezionati')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->exporter(OrderExporter::class),
+                BulkActionGroup::make([
+                    RestoreBulkAction::make()->label('Ripristina selezionati'),
+                    DeleteBulkAction::make()->label('Elimina selezionati'),
+                ])->label('Azioni'),
             ])
             ->headerActions([
                 ExportAction::make()

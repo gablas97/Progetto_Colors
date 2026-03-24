@@ -30,7 +30,7 @@ class ReviewResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-star';
     
-    protected static string|UnitEnum|null $navigationGroup = 'Vendite';
+    protected static string|UnitEnum|null $navigationGroup = 'Clienti';
     
     protected static ?int $navigationSort = 2;
 
@@ -43,52 +43,57 @@ class ReviewResource extends Resource
         return $infolist
             ->components([
                 Section::make('Dettagli Recensione')
+                    ->icon('heroicon-o-star')->iconColor('warning')
+                    ->columnSpanFull()
                     ->schema([
                         TextEntry::make('product.name')
                             ->label('Prodotto')
                             ->color('primary')
                             ->weight('bold'),
-                        
+
                         TextEntry::make('user.full_name')
                             ->label('Utente')
+                            ->weight('medium')
                             ->default(fn ($record) => $record->user->full_name ?? $record->user->email),
-                        
+
                         TextEntry::make('user.email')
                             ->label('Email')
-                            ->copyable(),
-                        
+                            ->copyable()
+                            ->color('primary'),
+
                         TextEntry::make('order.order_number')
                             ->label('Ordine')
+                            ->badge()
                             ->color('primary')
                             ->placeholder('Nessun ordine collegato'),
 
                         TextEntry::make('created_at')
                             ->label('Data Creazione')
                             ->dateTime('d/m/Y H:i'),
-                        
+
                         TextEntry::make('updated_at')
                             ->label('Ultimo Aggiornamento')
                             ->dateTime('d/m/Y H:i')
-                            ->visible(fn ($record) => $record->created_at != $record->updated_at),    
-                        
+                            ->visible(fn ($record) => $record->created_at != $record->updated_at),
+
                         TextEntry::make('rating')
                             ->label('Valutazione')
                             ->formatStateUsing(fn (int $state): string => str_repeat('⭐', $state) . " ($state/5)")
                             ->color('warning')
                             ->weight('bold'),
-                        
+
                         TextEntry::make('is_verified_purchase')
                             ->label('Acquisto Verificato')
                             ->badge()
                             ->formatStateUsing(fn (bool $state): string => $state ? 'Sì' : 'No')
                             ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
-                        
+
                         TextEntry::make('is_approved')
                             ->label('Stato')
                             ->badge()
                             ->formatStateUsing(fn (bool $state): string => $state ? 'Approvata' : 'In Attesa')
                             ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
-                        
+
                         TextEntry::make('helpful_count')
                             ->label('Voti "Utile"')
                             ->badge()
@@ -97,6 +102,8 @@ class ReviewResource extends Resource
                     ->columns(2),
 
                 Section::make('Contenuto Recensione')
+                    ->icon('heroicon-o-document-text')->iconColor('gray')
+                    ->columnSpanFull()
                     ->schema([
                         TextEntry::make('title')
                             ->label('Titolo')
@@ -104,12 +111,11 @@ class ReviewResource extends Resource
                             ->weight('bold')
                             ->size('lg')
                             ->columnSpanFull(),
-                        
+
                         TextEntry::make('comment')
                             ->label('Commento')
                             ->placeholder('Nessun commento')
-                            ->columnSpanFull()
-                            ->prose(),
+                            ->columnSpanFull(),
                     ])
             ]);
     }
@@ -178,7 +184,7 @@ class ReviewResource extends Resource
                     ->badge()
                     ->color('success')
                     ->alignCenter()
-                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->formatStateUsing(fn (int $state): string => $state > 0 ? (string) $state : '0'),
 
                 TextColumn::make('created_at')

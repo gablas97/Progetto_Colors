@@ -28,7 +28,7 @@ class ViewOrder extends ViewRecord
                 ->action(function () {
                     return response()->streamDownload(function () {
                         echo \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', ['order' => $this->record])->output();
-                    }, "fattura-{$this->record->order_number}.pdf");
+                    }, "FATTURA-{$this->record->order_number}.pdf");
                 }),
             
             Actions\Action::make('mark_as_shipped')

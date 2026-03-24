@@ -19,8 +19,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,22 +45,20 @@ class CategoryResource extends Resource
     {
         return $schema->schema([
             Section::make('Informazioni Base')
+                ->icon('heroicon-o-folder')->iconColor('primary')
                 ->schema([
-                    TextEntry::make('name')->label('Nome'),
-                    TextEntry::make('slug')->label('Slug'),
+                    TextEntry::make('name')->label('Nome')->weight('bold'),
                     TextEntry::make('parent.name')
                         ->label('Categoria Padre')
+                        ->badge()
+                        ->color('gray')
                         ->placeholder('Categoria Principale'),
+                    IconEntry::make('is_active')->label('Attiva')->boolean()->trueColor('success')->falseColor('danger'),
                     TextEntry::make('description')
                         ->label('Descrizione')
                         ->placeholder('—')
                         ->columnSpanFull(),
-                ])->columns(2),
-
-            Section::make('Impostazioni')
-                ->schema([
-                    IconEntry::make('is_active')->label('Attiva')->boolean(),
-                ])->columns(1),
+                ])->columns(3)->columnSpanFull(),
         ]);
     }
 
@@ -71,6 +67,9 @@ class CategoryResource extends Resource
         return $schema
             ->schema([
                 Section::make('Informazioni Base')
+                    ->icon('heroicon-o-folder')->iconColor('primary')
+                    ->description('Informazioni generali')
+                    ->aside()
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nome')
@@ -85,37 +84,18 @@ class CategoryResource extends Resource
                             ->nullable()
                             ->helperText('Lascia vuoto per categoria principale'),
 
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Attiva')
+                            ->default(true)
+                            ->helperText('Mostra la categoria nel sito'),
+
                         Forms\Components\Textarea::make('description')
                             ->label('Descrizione')
                             ->rows(3)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(3)->columnSpanFull(),
 
-                Section::make('SEO')
-                    ->schema([
-                        TextInput::make('meta_title')
-                            ->label('Meta Titolo')
-                            ->maxLength(60)
-                            ->helperText('Max 60 caratteri'),
-
-                        Textarea::make('meta_description')
-                            ->label('Meta Descrizione')
-                            ->rows(2)
-                            ->maxLength(160)
-                            ->helperText('Max 160 caratteri'),
-                    ])
-                    ->collapsed()
-                    ->columns(1),
-
-                Section::make('Impostazioni')
-                    ->schema([
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Attiva')
-                            ->default(true)
-                            ->helperText('Mostra categoria nel sito'),
-                    ])
-                    ->columns(1),
             ]);
     }
 
@@ -133,7 +113,6 @@ class CategoryResource extends Resource
                 Tables\Columns\TextColumn::make('parent.name')
                     ->label('Categoria Padre')
                     ->searchable()
-                    ->sortable()
                     ->placeholder('Categoria Principale')
                     ->badge()
                     ->color('gray')
@@ -169,8 +148,21 @@ class CategoryResource extends Resource
                     ->trueLabel('Solo attive')
                     ->falseLabel('Solo disattivate'),
 
+                Tables\Filters\SelectFilter::make('tipo')
+                    ->label('Tipo')
+                    ->placeholder('Tutte')
+                    ->options([
+                        'padre'  => 'Solo categorie padre',
+                        'figlia' => 'Solo categorie figlie',
+                    ])
+                    ->query(fn (\Illuminate\Database\Eloquent\Builder $query, array $data) => match ($data['value'] ?? null) {
+                        'padre'  => $query->whereNull('parent_id'),
+                        'figlia' => $query->whereNotNull('parent_id'),
+                        default  => $query,
+                    }),
+
                 Tables\Filters\SelectFilter::make('parent_id')
-                    ->label('Categorie')
+                    ->label('Categoria Padre')
                     ->placeholder('Tutte')
                     ->relationship('parent', 'name')
                     ->searchable()
@@ -178,10 +170,10 @@ class CategoryResource extends Resource
                     ->preload(),
 
                 Tables\Filters\TrashedFilter::make()
-                    ->label('Categorie eliminate')
-                    ->placeholder('Solo attive')
-                    ->trueLabel('Tutte')
-                    ->falseLabel('Solo eliminate'),
+                    ->label('Mostra Eliminate')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminate'),
 
             ])
             ->recordAction(ViewAction::class)

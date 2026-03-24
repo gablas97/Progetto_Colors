@@ -15,6 +15,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -44,6 +45,9 @@ class DiscountResource extends Resource
         return $schema
             ->schema([
                 Section::make('Informazioni Sconto')
+                    ->icon('heroicon-o-tag')->iconColor('primary')
+                    ->description('Dati principali del codice sconto')
+                    ->aside()
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Nome Sconto')
@@ -67,6 +71,7 @@ class DiscountResource extends Resource
                                 'fixed' => 'Importo Fisso',
                                 'shipping' => 'Spedizione Gratuita',
                             ])
+                            ->default('percentage')
                             ->required()
                             ->live(),
 
@@ -86,9 +91,12 @@ class DiscountResource extends Resource
                             ->nullable()
                             ->helperText('Ordine minimo per applicare lo sconto'),
                     ])
-                    ->columns(2),
+                    ->columns(3)->columnSpanFull(),
 
-                Section::make('Limitazioni')
+                Section::make('Limitazioni e Validità')
+                    ->icon('heroicon-o-shield-check')->iconColor('warning')
+                    ->description('Utilizzi, date di validità e restrizioni')
+                    ->aside()
                     ->schema([
                         Forms\Components\TextInput::make('usage_limit')
                             ->label('Limite Utilizzi Totali')
@@ -101,7 +109,8 @@ class DiscountResource extends Resource
                             ->numeric()
                             ->default(0)
                             ->disabled()
-                            ->dehydrated(false),
+                            ->dehydrated(false)
+                            ->hidden(fn (string $operation) => $operation === 'create'),
 
                         Forms\Components\DateTimePicker::make('starts_at')
                             ->label('Data Inizio')
@@ -113,24 +122,50 @@ class DiscountResource extends Resource
                             ->nullable()
                             ->helperText('Lascia vuoto per nessuna scadenza'),
 
+                        Forms\Components\Toggle::make('is_single_use_per_user')
+                            ->label('Un solo utilizzo per account')
+                            ->default(false)
+                            ->helperText('Ogni account può usare questo sconto una sola volta')
+                            ->columnSpan(2),
+
                         Forms\Components\Toggle::make('is_active')
                             ->label('Attivo')
                             ->default(true)
                             ->helperText('Attiva/disattiva lo sconto'),
                     ])
-                    ->columns(2),
+                    ->columns(3)->columnSpanFull(),
 
-                Section::make('Prodotti Specifici')
+                Section::make('Applicabilità')
+                    ->icon('heroicon-o-cube')->iconColor('gray')
+                    ->description('Lascia tutto vuoto per applicare lo sconto a tutti i prodotti')
+                    ->aside()
                     ->schema([
+                        Forms\Components\Select::make('categories')
+                            ->label('Categorie')
+                            ->relationship('categories', 'name')
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Applica a tutte le categorie selezionate'),
+
+                        Forms\Components\Select::make('brands')
+                            ->label('Marche')
+                            ->relationship('brands', 'name')
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Applica a tutte le marche selezionate'),
+
                         Forms\Components\Select::make('products')
-                            ->label('Applica Solo a Prodotti Specifici')
+                            ->label('Prodotti Specifici')
                             ->relationship('products', 'name')
                             ->multiple()
                             ->searchable()
                             ->preload()
-                            ->helperText('Lascia vuoto per applicare a tutti i prodotti'),
+                            ->helperText('Applica a prodotti specifici'),
                     ])
-                    ->collapsed(),
+                    ->columns(1)
+                    ->collapsed()->columnSpanFull(),
             ]);
     }
 
@@ -139,9 +174,11 @@ class DiscountResource extends Resource
         return $schema
             ->schema([
                 Section::make('Informazioni Sconto')
+                    ->icon('heroicon-o-tag')->iconColor('primary')
                     ->schema([
                         TextEntry::make('name')
-                            ->label('Nome Sconto'),
+                            ->label('Nome Sconto')
+                            ->weight('bold'),
 
                         TextEntry::make('code')
                             ->label('Codice Coupon')
@@ -175,9 +212,10 @@ class DiscountResource extends Resource
                             ->formatStateUsing(fn ($state): string => $state ? '€ ' . number_format($state, 2, ',', '.') : '—')
                             ->placeholder('Nessun minimo'),
                     ])
-                    ->columns(2),
+                    ->columns(3)->columnSpanFull(),
 
                 Section::make('Limitazioni e Validità')
+                    ->icon('heroicon-o-shield-check')->iconColor('warning')
                     ->schema([
                         TextEntry::make('usage_count')
                             ->label('Utilizzi')
@@ -191,7 +229,15 @@ class DiscountResource extends Resource
 
                         IconEntry::make('is_active')
                             ->label('Attivo')
-                            ->boolean(),
+                            ->boolean()
+                            ->trueColor('success')
+                            ->falseColor('danger'),
+
+                        IconEntry::make('is_single_use_per_user')
+                            ->label('Un solo utilizzo per account')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-user-circle')
+                            ->trueColor('warning'),
 
                         TextEntry::make('starts_at')
                             ->label('Data Inizio')
@@ -206,7 +252,34 @@ class DiscountResource extends Resource
                                 $state && now()->gt($state) ? 'danger' : 'gray'
                             ),
                     ])
-                    ->columns(2),
+                    ->columns(3)->columnSpanFull(),
+
+                Section::make('Cronologia Utilizzi')
+                    ->icon('heroicon-o-clock')->iconColor('gray')
+                    ->schema([
+                        RepeatableEntry::make('usages')
+                            ->label('Utilizzi')
+                            ->placeholder('Nessun utilizzo')
+                            ->schema([
+                                TextEntry::make('user.first_name')
+                                    ->label('Nome')
+                                    ->formatStateUsing(fn ($state, $record) => trim(($record->user->first_name ?? '') . ' ' . ($record->user->last_name ?? '')) ?: '—'),
+                                TextEntry::make('user.email')
+                                    ->label('Email')
+                                    ->placeholder('—'),
+                                TextEntry::make('order_id')
+                                    ->label('Ordine #')
+                                    ->placeholder('—'),
+                                TextEntry::make('used_at')
+                                    ->label('Data utilizzo')
+                                    ->dateTime('d/m/Y H:i'),
+                            ])
+                            ->columns(4)
+                            ->columnSpanFull(),
+                    ])
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->collapsed(fn (Discount $record) => $record->usages()->count() === 0),
             ]);
     }
 
@@ -218,7 +291,8 @@ class DiscountResource extends Resource
                     ->label('Nome')
                     ->searchable()
                     ->sortable()
-                    ->weight('medium'),
+                    ->weight('medium')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('code')
                     ->label('Codice')
@@ -227,7 +301,9 @@ class DiscountResource extends Resource
                     ->badge()
                     ->color('primary')
                     ->copyable()
-                    ->placeholder('Auto'),
+                    ->placeholder('—')
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tipo')
@@ -236,7 +312,8 @@ class DiscountResource extends Resource
                         'fixed' => 'Fisso',
                         'shipping' => 'Spedizione',
                         default => 'N/A',
-                    }),
+                    })
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('value')
                     ->label('Valore')
@@ -246,7 +323,8 @@ class DiscountResource extends Resource
                         default      => number_format($record->value, 2, ',', '.') . ' €',
                     })
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('usage_count')
                     ->label('Utilizzi')
@@ -259,7 +337,8 @@ class DiscountResource extends Resource
                             ? 'danger'
                             : 'success'
                     )
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('expires_at')
                     ->label('Scadenza')
@@ -268,13 +347,23 @@ class DiscountResource extends Resource
                     ->sortable()
                     ->color(fn ($state): string =>
                         $state && now()->gt($state) ? 'danger' : 'gray'
-                    ),
+                    )
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                Tables\Columns\IconColumn::make('is_single_use_per_user')
+                    ->label('1x account')
+                    ->boolean()
+                    ->alignCenter()
+                    ->trueIcon('heroicon-o-check')
+                    ->falseIcon('heroicon-o-x-mark')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Attivo')
                     ->boolean()
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->defaultSort('expires_at', 'asc')
             ->recordUrl(null)

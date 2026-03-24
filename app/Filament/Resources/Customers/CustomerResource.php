@@ -12,6 +12,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms;
@@ -36,13 +38,19 @@ class CustomerResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('role', 'customer');
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([\Illuminate\Database\Eloquent\SoftDeletingScope::class])
+            ->where('role', 'customer');
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             Section::make('Dati Personali')
+                ->icon('heroicon-o-user')->iconColor('primary')
+                ->description('Anagrafica e recapiti del cliente')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('first_name')->label('Nome')->required()->maxLength(255),
                     Forms\Components\TextInput::make('last_name')->label('Cognome')->required()->maxLength(255),
@@ -50,6 +58,10 @@ class CustomerResource extends Resource
                     Forms\Components\TextInput::make('phone')->label('Telefono')->maxLength(20),
                 ])->columns(2),
             Section::make('Impostazioni')
+                ->icon('heroicon-o-cog-6-tooth')->iconColor('gray')
+                ->description('Stato account e preferenze')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\Toggle::make('is_active')->label('Attivo')->default(true),
                     Forms\Components\Toggle::make('newsletter_subscribed')->label('Iscritto Newsletter')->default(false),
@@ -61,34 +73,45 @@ class CustomerResource extends Resource
     {
         return $schema->components([
             Section::make('Dati Personali')
+                ->icon('heroicon-o-user')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
-                    Infolists\Components\TextEntry::make('first_name')->label('Nome'),
-                    Infolists\Components\TextEntry::make('last_name')->label('Cognome'),
-                    Infolists\Components\TextEntry::make('email')->label('Email')->copyable(),
-                    Infolists\Components\TextEntry::make('phone')->label('Telefono')
-                        ->default('—'),
+                    Infolists\Components\TextEntry::make('first_name')->label('Nome')->weight('bold'),
+                    Infolists\Components\TextEntry::make('last_name')->label('Cognome')->weight('bold'),
+                    Infolists\Components\TextEntry::make('email')->label('Email')->copyable()->color('primary'),
+                    Infolists\Components\TextEntry::make('phone')->label('Telefono')->placeholder('—'),
                 ])->columns(2),
             Section::make('Impostazioni')
+                ->icon('heroicon-o-cog-6-tooth')->iconColor('gray')
+                ->columnSpanFull()
                 ->schema([
                     Infolists\Components\IconEntry::make('newsletter_subscribed')
                         ->label('Iscritto Newsletter')
-                        ->boolean(),
+                        ->boolean()
+                        ->trueColor('info')
+                        ->falseColor('gray'),
                     Infolists\Components\IconEntry::make('is_active')
                         ->label('Attivo')
-                        ->boolean(),
+                        ->boolean()
+                        ->trueColor('success')
+                        ->falseColor('danger'),
                 ])->columns(2),
             Section::make('Attività')
+                ->icon('heroicon-o-chart-bar')->iconColor('info')
+                ->columnSpanFull()
                 ->schema([
                     Infolists\Components\TextEntry::make('orders_count')
                         ->label('Ordini Totali')
-                        ->state(fn (User $record) => $record->orders()->count()),
+                        ->state(fn (User $record) => $record->orders()->count())
+                        ->badge()
+                        ->color('primary'),
                     Infolists\Components\TextEntry::make('created_at')
                         ->label('Registrato il')
                         ->dateTime('d/m/Y H:i'),
                     Infolists\Components\TextEntry::make('email_verified_at')
                         ->label('Email Verificata')
                         ->dateTime('d/m/Y H:i')
-                        ->default('Non verificata'),
+                        ->placeholder('Non verificata'),
                 ])->columns(3),
         ]);
     }
@@ -131,6 +154,11 @@ class CustomerResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_active')->label('Stato')
                     ->trueLabel('Attivi')->falseLabel('Disattivi'),
                 Tables\Filters\TernaryFilter::make('newsletter_subscribed')->label('Newsletter'),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Mostra Eliminati')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminati'),
             ])
             ->recordUrl(null)
             ->recordAction(ViewAction::class)
@@ -151,6 +179,7 @@ class CustomerResource extends Resource
                             : 'Il cliente potrà nuovamente accedere al proprio account. Continuare?'
                         )
                         ->action(fn (User $record) => $record->update(['is_active' => !$record->is_active])),
+                    RestoreAction::make()->label('Ripristina'),
                     DeleteAction::make()
                         ->label('Elimina')
                         ->before(function (User $record, \Filament\Actions\DeleteAction $action) {
@@ -185,6 +214,7 @@ class CustomerResource extends Resource
                         ->modalDescription('I clienti selezionati non potranno più accedere al proprio account. Continuare?')
                         ->action(fn (Collection $records) => $records->each->update(['is_active' => false]))
                         ->deselectRecordsAfterCompletion(),
+                    RestoreBulkAction::make()->label('Ripristina selezionati'),
                     DeleteBulkAction::make()->label('Elimina selezionati'),
                 ]),
             ])

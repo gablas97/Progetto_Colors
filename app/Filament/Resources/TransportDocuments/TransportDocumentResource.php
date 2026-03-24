@@ -9,7 +9,11 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms;
@@ -26,7 +30,7 @@ use UnitEnum;
 class TransportDocumentResource extends Resource
 {
     protected static ?string $model = TransportDocument::class;
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-truck';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-down';
     protected static string|UnitEnum|null $navigationGroup = 'Fatturazione';
     protected static ?string $navigationLabel = 'Documenti di Trasporto';
     protected static ?string $modelLabel = 'DDT';
@@ -37,6 +41,10 @@ class TransportDocumentResource extends Resource
     {
         return $schema->schema([
             Section::make('Dati DDT')
+                ->icon('heroicon-o-document-arrow-down')->iconColor('primary')
+                ->description('Numero, stato, causale e ordine collegato')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('document_number')
                         ->label('Numero DDT')
@@ -64,24 +72,36 @@ class TransportDocumentResource extends Resource
                 ])->columns(2),
 
             Section::make('Mittente')
+                ->icon('heroicon-o-building-office')->iconColor('gray')
+                ->description('Dati del mittente — lascia invariato per Colors S.r.l.')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
-                    Forms\Components\TextInput::make('sender_name')->label('Mittente')->default('Colors S.r.l.'),
+                    Forms\Components\TextInput::make('sender_name')->label('Ragione Sociale')->default('Colors S.r.l.'),
                     Forms\Components\TextInput::make('sender_address')->label('Indirizzo'),
                     Forms\Components\TextInput::make('sender_city')->label('Città'),
                     Forms\Components\TextInput::make('sender_province')->label('Prov.')->maxLength(2),
                     Forms\Components\TextInput::make('sender_postal_code')->label('CAP'),
-                ])->columns(5)->collapsible(),
+                ])->columns(2)->collapsible(),
 
             Section::make('Destinatario')
+                ->icon('heroicon-o-map-pin')->iconColor('info')
+                ->description('Dati del destinatario della merce')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('recipient_name')->label('Destinatario')->required(),
                     Forms\Components\TextInput::make('recipient_address')->label('Indirizzo')->required(),
                     Forms\Components\TextInput::make('recipient_city')->label('Città')->required(),
                     Forms\Components\TextInput::make('recipient_province')->label('Prov.')->maxLength(2)->required(),
                     Forms\Components\TextInput::make('recipient_postal_code')->label('CAP')->required(),
-                ])->columns(5),
+                ])->columns(2),
 
             Section::make('Trasporto')
+                ->icon('heroicon-o-truck')->iconColor('warning')
+                ->description('Mezzo, corriere, tracking e date di spedizione')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\Select::make('shipping_method')->label('Mezzo di Trasporto')
                         ->options(['corriere' => 'Corriere', 'ritiro' => 'Ritiro', 'proprio_mezzo' => 'Proprio Mezzo'])
@@ -96,9 +116,14 @@ class TransportDocumentResource extends Resource
                 ])->columns(2),
 
             Section::make('Articoli')
+                ->icon('heroicon-o-cube')->iconColor('primary')
+                ->description('Beni trasportati')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\Repeater::make('items')
                         ->relationship()
+                        ->hiddenLabel()
                         ->schema([
                             Forms\Components\Select::make('product_id')->label('Prodotto')
                                 ->relationship('product', 'name')->searchable()->preload()
@@ -111,20 +136,23 @@ class TransportDocumentResource extends Resource
                                             $set('weight', $product->weight);
                                         }
                                     }
-                                }),
+                                })->columnSpan(2),
                             Forms\Components\TextInput::make('description')->label('Descrizione')->required()->columnSpan(2),
                             Forms\Components\TextInput::make('quantity')->label('Qtà')->numeric()->required()->default(1),
                             Forms\Components\TextInput::make('unit')->label('U.M.')->default('pz'),
                             Forms\Components\TextInput::make('weight')->label('Peso (g)')->numeric(),
                         ])
-                        ->columns(6)
+                        ->columns(3)
                         ->defaultItems(1)
                         ->addActionLabel('Aggiungi Articolo'),
                 ]),
 
             Section::make('Note')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
-                    Forms\Components\Textarea::make('notes')->label('Note'),
+                    Forms\Components\Textarea::make('notes')->label('Note')->hiddenLabel(),
                 ]),
         ]);
     }
@@ -133,6 +161,8 @@ class TransportDocumentResource extends Resource
     {
         return $schema->schema([
             Section::make('Dati DDT')
+                ->icon('heroicon-o-document-arrow-down')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('document_number')
                         ->label('Numero DDT')
@@ -169,10 +199,13 @@ class TransportDocumentResource extends Resource
                         }),
                     TextEntry::make('order.order_number')
                         ->label('Ordine Collegato')
+                        ->copyable()
                         ->placeholder('—'),
                 ])->columns(2),
 
             Section::make('Mittente → Destinatario')
+                ->icon('heroicon-o-arrows-right-left')->iconColor('info')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('sender_name')
                         ->label('Mittente')
@@ -184,6 +217,7 @@ class TransportDocumentResource extends Resource
                         ])) ?: '—'),
                     TextEntry::make('recipient_name')
                         ->label('Destinatario')
+                        ->weight('bold')
                         ->formatStateUsing(fn ($state, TransportDocument $record): string => implode(', ', array_filter([
                             $record->recipient_name,
                             $record->recipient_address,
@@ -193,17 +227,19 @@ class TransportDocumentResource extends Resource
                 ])->columns(2),
 
             Section::make('Trasporto')
+                ->icon('heroicon-o-truck')->iconColor('warning')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('shipping_method')
                         ->label('Mezzo')
                         ->formatStateUsing(fn ($state) => match ($state) {
-                            'corriere'     => 'Corriere',
-                            'ritiro'       => 'Ritiro',
-                            'proprio_mezzo'=> 'Proprio Mezzo',
-                            default        => '—',
+                            'corriere'      => 'Corriere',
+                            'ritiro'        => 'Ritiro',
+                            'proprio_mezzo' => 'Proprio Mezzo',
+                            default         => '—',
                         }),
                     TextEntry::make('carrier_name')->label('Corriere')->placeholder('—'),
-                    TextEntry::make('tracking_number')->label('Tracking')->placeholder('—')->copyable(),
+                    TextEntry::make('tracking_number')->label('Tracking')->placeholder('—')->copyable()->color('primary'),
                     TextEntry::make('packages_count')->label('N. Colli'),
                     TextEntry::make('total_weight')->label('Peso Tot. (kg)')->placeholder('—'),
                     TextEntry::make('appearance')->label('Aspetto Beni')->placeholder('—'),
@@ -212,9 +248,11 @@ class TransportDocumentResource extends Resource
                 ])->columns(4),
 
             Section::make('Articoli')
+                ->icon('heroicon-o-cube')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
                     RepeatableEntry::make('items')
-                        ->label('')
+                        ->hiddenLabel()
                         ->schema([
                             TextEntry::make('description')->label('Descrizione'),
                             TextEntry::make('quantity')->label('Qtà'),
@@ -226,8 +264,10 @@ class TransportDocumentResource extends Resource
                 ]),
 
             Section::make('Note')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                ->columnSpanFull()
                 ->schema([
-                    TextEntry::make('notes')->label('')->placeholder('Nessuna nota')->columnSpanFull(),
+                    TextEntry::make('notes')->hiddenLabel()->placeholder('Nessuna nota')->columnSpanFull(),
                 ])->collapsible()->collapsed(),
         ]);
     }
@@ -311,6 +351,11 @@ class TransportDocumentResource extends Resource
                         'riparazione'       => 'Riparazione',
                         'altro'             => 'Altro',
                     ]),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Mostra Eliminati')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminati'),
             ])
             ->recordActions([
                 ViewAction::make()
@@ -330,6 +375,8 @@ class TransportDocumentResource extends Resource
                                 "{$record->document_number}.pdf"
                             );
                         }),
+                    RestoreAction::make()->label('Ripristina'),
+                    DeleteAction::make()->label('Elimina'),
                     EditAction::make()
                         ->label('Modifica')
                         ->color('warning'),
@@ -359,6 +406,8 @@ class TransportDocumentResource extends Resource
                             }, 'DDT-' . now()->format('Y-m-d') . '.zip');
                         })
                         ->deselectRecordsAfterCompletion(),
+                    RestoreBulkAction::make()->label('Ripristina selezionati'),
+                    DeleteBulkAction::make()->label('Elimina selezionati'),
                 ]),
             ]);
     }
@@ -370,5 +419,13 @@ class TransportDocumentResource extends Resource
             'create' => Pages\CreateTransportDocument::route('/create'),
             'edit'   => Pages\EditTransportDocument::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                \Illuminate\Database\Eloquent\SoftDeletingScope::class,
+            ]);
     }
 }

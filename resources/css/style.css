@@ -1,0 +1,37 @@
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply inline-block bg-primary text-white px-8 py-3 text-xs font-semibold tracking-widest uppercase hover:bg-primary-dark transition-colors duration-200 cursor-pointer;
+  }
+
+  .btn-outline-dark {
+    @apply inline-block border border-gray-800 text-gray-800 px-8 py-3 text-xs font-semibold tracking-widest uppercase hover:bg-gray-800 hover:text-white transition-colors duration-200 cursor-pointer;
+  }
+
+  .btn-outline-white {
+    @apply inline-block border border-white text-white px-8 py-3 text-xs font-semibold tracking-widest uppercase hover:bg-white hover:text-gray-900 transition-colors duration-200 cursor-pointer;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply text-xs font-semibold tracking-widest uppercase text-gray-700 hover:text-primary transition-colors duration-150;
+  }
+
+  /* Forms */
+  .input-field {
+    @apply w-full border border-gray-200 px-4 py-3 text-sm text-gray-800 focus:outline-none focus:border-primary transition-colors bg-white;
+  }
+
+  .form-label {
+    @apply block text-xs font-semibold tracking-wider text-gray-600 mb-1.5 uppercase;
+  }
+
+  /* Typography helpers */
+  .section-heading {
+    @apply text-2xl font-semibold text-gray-900;
+  }
+
+  .underline-accent {
+    @apply border-b-2 border-current pb-0.5;
+  }
+}

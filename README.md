@@ -95,7 +95,7 @@ La homepage del pannello mostra:
 - **Lista prodotti** — filtri per categoria, brand, stato attivo, gestione stock; tab rapidi "Scorte Basse" e "Esauriti"
 - **Crea/Modifica prodotto** — scheda completa con: dati base, prezzi (costo, prezzo, IVA), gestione stock (quantità, soglia minima), varianti, immagini, categorie, brand, SEO (slug auto-generato)
 - **Varianti** — ogni variante ha stock proprio, SKU e prezzo differenziato
-- **Clic su riga** → modale con tutte le informazioni del prodotto
+- **Click su riga** → modale con tutte le informazioni del prodotto
 
 #### Categorie & Brand
 - Creabili sia dalla sezione dedicata sia direttamente durante la creazione/modifica di un prodotto (tramite modal inline)
@@ -107,7 +107,7 @@ La homepage del pannello mostra:
 
 #### Gestione Ordini
 - **Lista ordini** — tab per stato (Tutti, In Attesa, In Elaborazione, Spediti, Consegnati, Annullati); filtri per stato pagamento, data, fonte
-- **Clic su riga** → modale di visualizzazione riepilogativa
+- **Click su riga** → modale di visualizzazione riepilogativa
 - **Pulsante "Gestisci"** → pagina completa di gestione con:
   - Dettaglio cliente e indirizzi di spedizione/fatturazione
   - Lista articoli ordinati con prezzi unitari e totali
@@ -127,7 +127,7 @@ pending → processing → shipped → delivered
 ### Clienti
 
 - **Lista clienti** — ricerca per nome/email, filtri per stato account e iscrizione newsletter, badge con numero ordini
-- **Clic su riga** → modale con dati personali, impostazioni account, statistiche (ordini totali, data registrazione, stato verifica email)
+- **Click su riga** → modale con dati personali, impostazioni account, statistiche (ordini totali, data registrazione, stato verifica email)
 - **Azioni per riga** — Modifica, Attiva/Disattiva account (con modale di conferma), Elimina
 - **Selezione multipla** — Attiva/Disattiva/Elimina in blocco
 
@@ -162,7 +162,7 @@ bozza → inviato → confermato → ricevuto_parzialmente → ricevuto
 - Panoramica completa dello stock di tutti i prodotti (con e senza varianti)
 - Filtri rapidi per stock basso, esauriti, solo prodotti con gestione stock abilitata
 - Export Excel dell'inventario aggiornato
-- **Clic su riga** → modale con il dettaglio completo del prodotto
+- **Click su riga** → modale con il dettaglio completo del prodotto
 
 #### Movimenti Stock
 - **Lista movimenti** — storico completo di tutti i carichi/scarichi con filtri per tipo di movimento, prodotto e intervallo di date
@@ -190,7 +190,7 @@ bozza → inviato → confermato → ricevuto_parzialmente → ricevuto
 - Gestione stati: `Bozza` → `Inviata` → `Pagata` / `Scaduta` / `Annullata`
 - Il **badge di navigazione** mostra il numero di fatture scadute attive (escluse bozze e annullate)
 - **Azioni bulk** — Scarica PDF multipli in ZIP, Segna come Pagate
-- **Clic su riga** → modale con tutti i dettagli e le righe fattura
+- **Click su riga** → modale con tutti i dettagli e le righe fattura
 
 #### Documenti di Trasporto (DDT)
 - Gestione DDT collegati agli ordini di spedizione
@@ -203,7 +203,7 @@ bozza → inviato → confermato → ricevuto_parzialmente → ricevuto
 - **Tipi di sconto:** Percentuale (%), Importo Fisso (€), Spedizione Gratuita
 - **Configurazione:** codice promozionale (salvato sempre in maiuscolo automaticamente), date di inizio/fine validità, importo minimo ordine, limite numero utilizzi
 - Gli sconti di tipo **Spedizione Gratuita** azzerano automaticamente il costo di spedizione; il campo "Valore" non è applicabile per questo tipo
-- Clic su riga → modale con tutti i dettagli
+- Click su riga → modale con tutti i dettagli
 
 ---
 

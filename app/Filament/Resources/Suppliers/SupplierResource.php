@@ -10,6 +10,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Infolists\Components\IconEntry;
@@ -37,6 +39,10 @@ class SupplierResource extends Resource
     {
         return $schema->schema([
             Section::make('Dati Aziendali')
+                ->icon('heroicon-o-building-office')->iconColor('primary')
+                ->description('Ragione sociale, referente e dati fiscali')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('company_name')
                         ->label('Ragione Sociale')
@@ -50,6 +56,10 @@ class SupplierResource extends Resource
                     Forms\Components\TextInput::make('tax_code')->label('Codice Fiscale')->maxLength(20),
                 ])->columns(2),
             Section::make('Contatti')
+                ->icon('heroicon-o-phone')->iconColor('info')
+                ->description('Email, telefono e sito web')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('email')->label('Email')->email(),
                     Forms\Components\TextInput::make('phone')->label('Telefono'),
@@ -57,6 +67,10 @@ class SupplierResource extends Resource
                     Forms\Components\TextInput::make('website')->label('Sito Web')->url(),
                 ])->columns(2),
             Section::make('Indirizzo')
+                ->icon('heroicon-o-map-pin')->iconColor('info')
+                ->description('Sede legale o operativa')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('address')->label('Indirizzo'),
                     Forms\Components\TextInput::make('city')->label('Città'),
@@ -64,6 +78,10 @@ class SupplierResource extends Resource
                     Forms\Components\TextInput::make('postal_code')->label('CAP'),
                 ])->columns(2),
             Section::make('Altre Informazioni')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                ->description('Termini di pagamento, stato e note')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\TextInput::make('payment_terms')->label('Termini Pagamento'),
                     Forms\Components\Toggle::make('is_active')->label('Attivo')->default(true),
@@ -76,22 +94,28 @@ class SupplierResource extends Resource
     {
         return $schema->schema([
             Section::make('Dati Aziendali')
+                ->icon('heroicon-o-building-office')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
-                    TextEntry::make('company_name')->label('Ragione Sociale')->weight('bold'),
+                    TextEntry::make('company_name')->label('Ragione Sociale')->weight('bold')->size('lg'),
                     TextEntry::make('contact_name')->label('Referente')->placeholder('—'),
                     TextEntry::make('vat_number')->label('Partita IVA')->placeholder('—')->copyable(),
                     TextEntry::make('tax_code')->label('Codice Fiscale')->placeholder('—')->copyable(),
                 ])->columns(2),
 
             Section::make('Contatti')
+                ->icon('heroicon-o-phone')->iconColor('info')
+                ->columnSpanFull()
                 ->schema([
-                    TextEntry::make('email')->label('Email')->placeholder('—')->copyable(),
+                    TextEntry::make('email')->label('Email')->placeholder('—')->copyable()->color('primary'),
                     TextEntry::make('phone')->label('Telefono')->placeholder('—'),
                     TextEntry::make('mobile')->label('Cellulare')->placeholder('—'),
                     TextEntry::make('website')->label('Sito Web')->placeholder('—'),
                 ])->columns(2),
 
             Section::make('Indirizzo')
+                ->icon('heroicon-o-map-pin')->iconColor('info')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('full_address')
                         ->label('Indirizzo Completo')
@@ -100,14 +124,18 @@ class SupplierResource extends Resource
                 ]),
 
             Section::make('Altre Informazioni')
+                ->icon('heroicon-o-cog-6-tooth')->iconColor('gray')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('payment_terms')->label('Termini di Pagamento')->placeholder('—'),
-                    IconEntry::make('is_active')->label('Attivo')->boolean(),
+                    IconEntry::make('is_active')->label('Attivo')->boolean()->trueColor('success')->falseColor('danger'),
                 ])->columns(2),
 
             Section::make('Note')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                ->columnSpanFull()
                 ->schema([
-                    TextEntry::make('notes')->label('')->placeholder('Nessuna nota')->columnSpanFull(),
+                    TextEntry::make('notes')->hiddenLabel()->placeholder('Nessuna nota')->columnSpanFull(),
                 ])->collapsible()->collapsed(fn (Supplier $record) => !$record->notes),
         ]);
     }
@@ -121,12 +149,20 @@ class SupplierResource extends Resource
                 Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->placeholder('—'),
                 Tables\Columns\TextColumn::make('phone')->label('Telefono')->placeholder('—'),
                 Tables\Columns\TextColumn::make('city')->label('Città')->searchable()->placeholder('—'),
-                Tables\Columns\TextColumn::make('orders_count')->label('Ordini')->counts('orders')->badge()->sortable(),
-                Tables\Columns\IconColumn::make('is_active')->label('Attivo')->boolean(),
+                Tables\Columns\TextColumn::make('orders_count')->label('Ordini')->counts('orders')->badge()->sortable()->alignCenter(),
+                Tables\Columns\IconColumn::make('is_active')->label('Attivo')->boolean()->alignCenter(),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')->label('Stato'),
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Stato')
+                    ->placeholder('Tutti')
+                    ->trueLabel('Attivi')
+                    ->falseLabel('Disattivi'),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Mostra Eliminati')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminati'),
             ])
             ->recordUrl(null)
             ->recordAction(ViewAction::class)
@@ -147,6 +183,7 @@ class SupplierResource extends Resource
                             : 'Il fornitore verrà riattivato. Continuare?'
                         )
                         ->action(fn (Supplier $record) => $record->update(['is_active' => !$record->is_active])),
+                    RestoreAction::make()->label('Ripristina'),
                     DeleteAction::make()
                         ->label('Elimina')
                         ->modalHeading('Elimina fornitore')
@@ -168,8 +205,9 @@ class SupplierResource extends Resource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    RestoreBulkAction::make()->label('Ripristina selezionati'),
+                    DeleteBulkAction::make()->label('Elimina selezionati'),
+                ])->label('Azioni'),
             ]);
     }
 
@@ -180,5 +218,13 @@ class SupplierResource extends Resource
             'create' => Pages\CreateSupplier::route('/create'),
             'edit'   => Pages\EditSupplier::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                \Illuminate\Database\Eloquent\SoftDeletingScope::class,
+            ]);
     }
 }

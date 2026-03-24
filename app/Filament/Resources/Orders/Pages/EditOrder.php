@@ -7,6 +7,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 
 class EditOrder extends EditRecord
 {
@@ -88,9 +89,27 @@ class EditOrder extends EditRecord
                     $invoice = OrderResource::buildInvoiceData($this->record);
                     return response()->streamDownload(function () use ($invoice) {
                         echo Pdf::loadView('pdf.invoice', ['invoice' => $invoice])->output();
-                    }, "fattura-{$this->record->order_number}.pdf");
+                    }, "FATTURA-{$this->record->order_number}.pdf");
                 }),
         ];
+    }
+
+    protected function beforeSave(): void
+    {
+        $newStatus = $this->data['status'] ?? null;
+
+        if (
+            in_array($newStatus, ['shipped', 'delivered']) &&
+            $this->record->payment_status !== 'paid'
+        ) {
+            Notification::make()
+                ->title('Operazione non consentita')
+                ->body('Non è possibile impostare questo stato per un ordine non ancora pagato.')
+                ->danger()
+                ->send();
+
+            throw new Halt;
+        }
     }
 
     protected function getRedirectUrl(): string

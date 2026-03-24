@@ -18,6 +18,7 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Support\HtmlString;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -74,6 +75,10 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Fornitori'),
                 NavigationGroup::make('Clienti'),
             ])
-            ->collapsibleNavigationGroups(false);
+            ->collapsibleNavigationGroups(false)
+            ->renderHook(
+                'panels::styles.after',
+                fn () => new HtmlString('<link rel="stylesheet" href="' . asset('css/admin.css') . '">')
+            );
     }
 }

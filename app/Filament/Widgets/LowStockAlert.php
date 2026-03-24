@@ -34,7 +34,7 @@ class LowStockAlert extends TableWidget
                 ImageColumn::make('main_image')
                     ->label('Immagine')
                     ->square()
-                    ->defaultImageUrl(url('/images/placeholder-product.png')),
+                    ->defaultImageUrl(url('/images/image-placeholder.jpg')),
 
                 TextColumn::make('name')
                     ->label('Prodotto')
@@ -56,22 +56,26 @@ class LowStockAlert extends TableWidget
                         $state <= 10 => 'warning',
                         default => 'success',
                     })
-                    ->suffix(' pz'),
+                    ->suffix(' pz')
+                    ->alignCenter(),
 
                 TextColumn::make('low_stock_threshold')
                     ->label('Soglia')
                     ->badge()
                     ->color('gray')
-                    ->suffix(' pz'),
+                    ->suffix(' pz')
+                    ->alignCenter(),
 
                 TextColumn::make('sales_count')
                     ->label('Vendite')
                     ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->alignCenter(),
 
                 IconColumn::make('is_active')
                     ->label('Attivo')
-                    ->boolean(),
+                    ->boolean()
+                    ->alignCenter(),
             ])
             ->filters([
                 //
@@ -81,8 +85,8 @@ class LowStockAlert extends TableWidget
             ])
             ->recordActions([
                 Action::make('edit')
-                    ->label('Modifica Stock')
-                    ->icon('heroicon-o-pencil')
+                    ->label('Gestisci')
+                    ->icon('heroicon-o-pencil-square')
                     ->url(fn (Product $record): string => route('filament.admin.resources.products.edit', $record)),
             ])
             ->toolbarActions([

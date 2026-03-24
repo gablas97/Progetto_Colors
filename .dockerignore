@@ -20,6 +20,7 @@ storage/framework/views/*
 # Build artifacts
 public/build/
 public/hot
+public/storage
 
 # Editor / OS
 .vscode/

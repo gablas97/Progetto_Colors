@@ -20,7 +20,7 @@ class RecentReviews extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Ultime Recensioni')
+            ->heading('💬 Ultime Recensioni')
             ->query(fn (): Builder => Review::query()
                     ->latest()
                     ->limit(10)
@@ -76,7 +76,7 @@ class RecentReviews extends TableWidget
                         $record->update(['is_approved' => true]);
                         $record->product->updateRatings();
                     }),
-                
+
                 Action::make('view')
                     ->label('Visualizza')
                     ->icon('heroicon-o-eye')

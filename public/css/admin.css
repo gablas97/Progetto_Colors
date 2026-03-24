@@ -1,0 +1,89 @@
+/* ============================================================
+   Colors S.r.l. — Admin Panel Custom Styles
+   ============================================================ */
+
+/* ---- Sidebar ------------------------------------------------ */
+
+/* Gruppo di navigazione: spaziatura più ariosa tra i gruppi */
+.fi-sidebar-nav > ul > li + li {
+    margin-top: 0.25rem;
+}
+
+/* Label del gruppo leggermente più visibile */
+.fi-sidebar-group-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.55;
+}
+
+/* ---- Cards / Sezioni --------------------------------------- */
+
+/* Raggio angoli leggermente più grande per i pannelli */
+.fi-section,
+.fi-wi,
+.fi-simple-page,
+.fi-card {
+    border-radius: 0.75rem !important;
+}
+
+/* Stat card: ombra sottile e hover lift */
+.fi-wi-stats-overview-stat {
+    border-radius: 0.75rem !important;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.fi-wi-stats-overview-stat:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
+/* ---- Tabelle ----------------------------------------------- */
+
+/* Header tabella: peso font ridotto per chiarezza */
+.fi-ta-header-cell {
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.6;
+}
+
+/* Righe tabella: altezza minima confortevole */
+.fi-ta-row {
+    min-height: 3rem;
+}
+
+/* ---- Badge stato ------------------------------------------- */
+
+/* Badge pill più arrotondato */
+.fi-badge {
+    border-radius: 9999px !important;
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+}
+
+/* ---- Header pannello -------------------------------------- */
+
+/* Titolo pagina: font leggermente più grande */
+.fi-header-heading {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+}
+
+/* ---- Notifiche -------------------------------------------- */
+
+/* Bell icon: leggero rimbalzo quando ci sono notifiche non lette */
+@keyframes bell-shake {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-12deg); }
+    40% { transform: rotate(12deg); }
+    60% { transform: rotate(-8deg); }
+    80% { transform: rotate(8deg); }
+}
+
+.fi-notifications-trigger[data-has-unread="true"] svg {
+    animation: bell-shake 0.5s ease-in-out;
+}

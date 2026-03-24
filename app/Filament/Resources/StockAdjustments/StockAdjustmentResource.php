@@ -7,12 +7,11 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockLog;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
-use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -21,6 +20,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use UnitEnum;
 
 class StockAdjustmentResource extends Resource
@@ -41,6 +41,10 @@ class StockAdjustmentResource extends Resource
     {
         return $schema->schema([
             Section::make('Movimento Stock')
+                ->icon('heroicon-o-arrows-right-left')->iconColor('primary')
+                ->description('Seleziona il prodotto e specifica il tipo e la quantità del movimento')
+                ->aside()
+                ->columnSpanFull()
                 ->schema([
                     Forms\Components\Select::make('product_id')
                         ->label('Prodotto')
@@ -64,12 +68,13 @@ class StockAdjustmentResource extends Resource
                     Forms\Components\Radio::make('type')
                         ->label('Tipo Operazione')
                         ->options([
-                            'manual_load' => 'Carico (aumenta stock)',
+                            'manual_load'   => 'Carico (aumenta stock)',
                             'manual_unload' => 'Scarico (diminuisce stock)',
                         ])
                         ->required()
                         ->inline()
-                        ->default('manual_load'),
+                        ->default('manual_load')
+                        ->columnSpanFull(),
 
                     Forms\Components\TextInput::make('quantity')
                         ->label('Quantità')
@@ -82,9 +87,9 @@ class StockAdjustmentResource extends Resource
                     Forms\Components\Textarea::make('reason')
                         ->label('Motivo')
                         ->rows(2)
-                        ->placeholder('Descrivi il motivo del movimento...'),
-                ])
-                ->columns(2),
+                        ->placeholder('Descrivi il motivo del movimento...')
+                        ->columnSpanFull(),
+                ]),
         ]);
     }
 
@@ -173,8 +178,8 @@ class StockAdjustmentResource extends Resource
                 Tables\Columns\TextColumn::make('cancelled_at')
                     ->label('Stato')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state ? 'Annullato' : 'Attivo')
-                    ->color(fn ($state) => $state ? 'danger' : 'success'),
+                    ->getStateUsing(fn (StockLog $record): string => $record->cancelled_at ? 'Annullato' : 'Eseguito')
+                    ->color(fn (string $state): string => $state === 'Annullato' ? 'danger' : 'success'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -329,6 +334,8 @@ class StockAdjustmentResource extends Resource
     {
         return $schema->schema([
             Section::make('Dettaglio Movimento')
+                ->icon('heroicon-o-arrows-right-left')->iconColor('primary')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('created_at')
                         ->label('Data e Ora')
@@ -352,11 +359,13 @@ class StockAdjustmentResource extends Resource
                         }),
 
                     TextEntry::make('product.name')
-                        ->label('Prodotto'),
+                        ->label('Prodotto')
+                        ->weight('medium'),
 
                     TextEntry::make('productVariant.name')
                         ->label('Variante')
-                        ->placeholder('—'),
+                        ->placeholder('—')
+                        ->color('gray'),
 
                     TextEntry::make('quantity')
                         ->label('Quantità')
@@ -378,12 +387,14 @@ class StockAdjustmentResource extends Resource
                 ])->columns(2),
 
             Section::make('Stock')
+                ->icon('heroicon-o-archive-box')->iconColor('warning')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('quantity_before')
-                        ->label('Stock Prima'),
+                        ->label('Stock Prima')
+                        ->color('gray'),
                     TextEntry::make('quantity_after')
                         ->label('Stock Dopo')
-                        ->badge()
                         ->color(fn ($state): string => match (true) {
                             $state == 0  => 'danger',
                             $state <= 10 => 'warning',
@@ -392,9 +403,11 @@ class StockAdjustmentResource extends Resource
                 ])->columns(2),
 
             Section::make('Motivo')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')->iconColor('gray')
+                ->columnSpanFull()
                 ->schema([
                     TextEntry::make('reason')
-                        ->label('')
+                        ->hiddenLabel()
                         ->placeholder('Nessun motivo specificato')
                         ->columnSpanFull(),
                 ])->collapsible()->collapsed(fn (StockLog $record) => !$record->reason),

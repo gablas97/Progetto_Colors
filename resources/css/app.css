@@ -1,2 +1,11 @@
-@import 'bootstrap';
-@import './style.css';
+@import "tailwindcss";
+@import "./style.css";
+
+@theme {
+  --color-primary: #E8845A;
+  --color-primary-dark: #d0704a;
+  --color-primary-light: #f5b89a;
+  --color-primary-50: #fef6f2;
+  --color-dark: #162032;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

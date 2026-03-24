@@ -36,20 +36,15 @@ class BrandResource extends Resource
     {
         return $schema->schema([
             Section::make('Informazioni Marca')
+                ->icon('heroicon-o-building-storefront')->iconColor('primary')
                 ->schema([
-                    TextEntry::make('name')->label('Nome'),
-                    TextEntry::make('slug')->label('Slug'),
-                    TextEntry::make('website')->label('Sito Web')->placeholder('—'),
+                    TextEntry::make('name')->label('Nome')->weight('bold'),
+                    TextEntry::make('website')->label('Sito Web')->placeholder('—')->color('primary')->copyable(),
+                    IconEntry::make('is_active')->label('Attiva')->boolean()->trueColor('success')->falseColor('danger'),
                     TextEntry::make('description')
                         ->label('Descrizione')
-                        ->placeholder('—')
-                        ->columnSpanFull(),
-                ])->columns(2),
-
-            Section::make('Impostazioni')
-                ->schema([
-                    IconEntry::make('is_active')->label('Attiva')->boolean(),
-                ])->columns(1),
+                        ->placeholder('—'),
+                ])->columns(2)->columnSpanFull(),
         ]);
     }
 
@@ -57,23 +52,26 @@ class BrandResource extends Resource
     {
         return $schema->components([
             Section::make('Informazioni Marca')
+                ->icon('heroicon-o-building-storefront')->iconColor('primary')
+                ->description('Informazioni generali')
+                ->aside()
                 ->schema([
                     Forms\Components\TextInput::make('name')
                         ->label('Nome')
                         ->required()
                         ->maxLength(255),
-                    Forms\Components\Textarea::make('description')
-                        ->label('Descrizione')
-                        ->rows(3)
-                        ->columnSpanFull(),
                     Forms\Components\TextInput::make('website')
                         ->label('Sito Web')
                         ->url()
                         ->maxLength(255),
+                    Forms\Components\Textarea::make('description')
+                        ->label('Descrizione')
+                        ->rows(3)
+                        ->columnSpan(2),
                     Forms\Components\Toggle::make('is_active')
                         ->label('Attiva')
                         ->default(true),
-                ])->columns(2),
+                ])->columns(2)->columnSpanFull(),
         ]);
     }
 
@@ -110,11 +108,16 @@ class BrandResource extends Resource
                     ->label('Stato')
                     ->trueLabel('Attive')
                     ->falseLabel('Disattive'),
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Mostra Eliminate')
+                    ->placeholder('No')
+                    ->trueLabel('Si')
+                    ->falseLabel('Solo Eliminate'),
             ])
             ->recordActions([
                 ActionGroup::make([
-                    ViewAction::make(),
+                    ViewAction::make()
+                        ->extraAttributes(['style' => 'display:none']),
                     EditAction::make(),
                     DeleteAction::make(),
                 ]),
