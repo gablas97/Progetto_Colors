@@ -5,12 +5,52 @@
 
 @section('content')
 
+    {{-- ===== SERVIZI DAL CATALOGO ===== --}}
+    @if($services->isNotEmpty())
+    <section class="py-16 md:py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="section-heading mb-2">I nostri servizi</h1>
+            <p class="text-gray-500 text-sm mb-10">Clicca su un servizio per scoprire i dettagli e il listino prezzi.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach($services as $service)
+                <a href="{{ route('services.show', $service->slug) }}"
+                   class="group block border border-gray-100 hover:border-primary hover:shadow-sm transition-all">
+                    @if($service->main_image)
+                        <div class="aspect-[4/3] overflow-hidden bg-gray-50">
+                            <img src="{{ Storage::url($service->main_image) }}"
+                                 alt="{{ $service->name }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        </div>
+                    @else
+                        <div class="aspect-[4/3] bg-primary-50 flex items-center justify-center">
+                            <svg class="w-12 h-12 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                            </svg>
+                        </div>
+                    @endif
+                    <div class="p-5">
+                        <h2 class="font-semibold text-gray-900 group-hover:text-primary transition-colors mb-1">{{ $service->name }}</h2>
+                        @if($service->short_description)
+                            <p class="text-sm text-gray-500 line-clamp-2">{{ $service->short_description }}</p>
+                        @endif
+                        @if($service->price)
+                            <p class="text-sm font-medium text-primary mt-3">a partire da € {{ number_format($service->price, 2, ',', '.') }}</p>
+                        @endif
+                    </div>
+                </a>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    <hr class="border-gray-100">
+    @endif
+
     {{-- ===== STAMPE E FOTOCOPIE ===== --}}
     <section class="py-16 md:py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div>
-                    <h1 class="text-3xl font-semibold text-primary mb-6">Stampe e fotocopie</h1>
+                    <h2 class="text-3xl font-semibold text-primary mb-6">Stampe e fotocopie</h2>
                     <ul class="space-y-2 text-sm text-gray-600 mb-6">
                         @foreach(['Stampe formato A3, A4, A5', 'Fotocopie formato A3 – A4', 'Stampe grandi formati', 'Stampe su cartoncino lucido', 'Stampe di fotografie'] as $item)
                             <li class="flex items-center gap-2">
@@ -95,9 +135,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-2xl font-semibold text-gray-900 mb-4">Hai bisogno di un preventivo?</h2>
             <p class="text-sm text-gray-500 mb-8">Scrivici o passa in negozio, siamo sempre felici di aiutarti.</p>
-            <a href="mailto:colorstarantosrl@gmail.com" class="btn-primary">
-                Contattaci
-            </a>
+            <a href="mailto:colorstarantosrl@gmail.com" class="btn-primary">Contattaci</a>
         </div>
     </section>
 

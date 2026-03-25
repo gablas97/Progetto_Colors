@@ -135,6 +135,7 @@ class InventoryResource extends Resource
 
                 Tables\Columns\ImageColumn::make('main_image')
                     ->label('Immagine')
+                    ->disk('public')
                     ->square()
                     ->imageSize(40)
                     ->toggleable()

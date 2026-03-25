@@ -272,6 +272,8 @@ class ProductResource extends Resource
                                             ->label('Immagine principale')
                                             ->image()
                                             ->required()
+                                            ->disk('public')
+                                            ->visibility('public')
                                             ->directory('products')
                                             ->imageEditor()
                                             ->imageEditorAspectRatioOptions(['1:1', '4:3'])
@@ -290,6 +292,8 @@ class ProductResource extends Resource
                                                 Forms\Components\FileUpload::make('image')
                                                     ->label('Immagine')
                                                     ->image()
+                                                    ->disk('public')
+                                                    ->visibility('public')
                                                     ->directory('products/gallery')
                                                     ->imageEditor()
                                                     ->required()
@@ -353,6 +357,8 @@ class ProductResource extends Resource
                                                 Forms\Components\FileUpload::make('image')
                                                     ->label('Immagine variante')
                                                     ->image()
+                                                    ->disk('public')
+                                                    ->visibility('public')
                                                     ->directory('products/variants')
                                                     ->maxSize(1024),
 
@@ -393,6 +399,7 @@ class ProductResource extends Resource
                                 Section::make('Dettagli')->icon('heroicon-o-information-circle')->iconColor('primary')->schema([
                                     ImageEntry::make('main_image')
                                         ->label('Immagine principale')
+                                        ->disk('public')
                                         ->imageHeight(220)
                                         ->columnSpanFull()
                                         ->placeholder('—'),
@@ -632,6 +639,7 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('main_image')
                     ->label('Immagine')
+                    ->disk('public')
                     ->square()
                     ->defaultImageUrl(url('/images/image-placeholder.jpg'))
                     ->alignCenter()

@@ -106,7 +106,7 @@
             <h2 class="section-heading mb-10">In evidenza</h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                 @foreach($featured as $product)
-                    <x-product-card :product="$product" />
+                    <x-product-card :product="$product" :wishlisted="in_array($product->id, $wishlistIds)" />
                 @endforeach
             </div>
             <div class="text-center mt-12">
@@ -126,7 +126,7 @@
             <h2 class="text-3xl md:text-4xl font-light text-white mb-6">
                 Visita il nostro negozio
             </h2>
-            <a href="https://maps.google.com/?q=Via+Umbria+35+Taranto" target="_blank" rel="noopener" class="btn-outline-white">
+            <a href="https://maps.app.goo.gl/8gU5VBw9cQyEzHc87" target="_blank" rel="noopener" class="btn-outline-white">
                 Come raggiungerci
             </a>
         </div>

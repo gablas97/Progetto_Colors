@@ -25,7 +25,7 @@
         {{-- ===== GALLERIA ===== --}}
         <div>
             {{-- Immagine principale --}}
-            <div class="relative aspect-square bg-gray-50 overflow-hidden mb-3">
+            <div class="relative h-48 sm:h-64 md:h-72 lg:h-80 bg-gray-50 overflow-hidden mb-3">
                 @php
                     $mainImage = $product->main_image ? Storage::url($product->main_image) : null;
                     $gallery   = $product->images->map(fn($i) => Storage::url($i->image))->prepend($mainImage)->filter()->values();
@@ -44,8 +44,15 @@
                     </div>
                 @endif
 
+                {{-- Badge esaurito --}}
+                @if($product->manage_stock && !$product->isInStock())
+                    <div class="absolute inset-0 bg-white/60 flex items-center justify-center pointer-events-none">
+                        <span class="bg-gray-800 text-white text-sm font-medium px-4 py-1.5 tracking-wide uppercase">Esaurito</span>
+                    </div>
+                @endif
+
                 {{-- Wishlist --}}
-                <button class="absolute top-3 right-3 w-9 h-9 bg-white rounded-full shadow flex items-center justify-center hover:scale-110 transition-transform"
+                <button class="absolute top-3 right-3 w-9 h-9 bg-white rounded-full shadow flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
                         aria-label="Aggiungi alla wishlist"
                         data-action="wishlist"
                         data-product-id="{{ $product->id }}">
@@ -104,7 +111,7 @@
                 <div class="flex flex-wrap gap-2" id="variant-selector">
                     @foreach($product->variants as $variant)
                         <button type="button"
-                                class="variant-btn border border-gray-200 px-3 py-1.5 text-xs text-gray-700 hover:border-primary hover:text-primary transition-colors"
+                                class="variant-btn border border-gray-200 px-3 py-1.5 text-xs text-gray-700 hover:border-primary hover:text-primary transition-colors cursor-pointer"
                                 data-variant-id="{{ $variant->id }}"
                                 data-variant-name="{{ $variant->name }}"
                                 @if(!$variant->isInStock()) disabled @endif>
@@ -127,13 +134,13 @@
                 {{-- Selettore quantità --}}
                 <div class="flex items-center border border-gray-200">
                     <button type="button" id="qty-minus"
-                            class="px-3 py-2.5 text-gray-500 hover:text-gray-900 transition-colors text-lg leading-none"
+                            class="px-3 py-2.5 text-gray-500 hover:text-gray-900 transition-colors text-lg leading-none cursor-pointer"
                             aria-label="Diminuisci">−</button>
                     <input type="number" name="quantity" id="qty-input"
                            value="1" min="1" max="99"
                            class="w-12 text-center text-sm border-0 focus:outline-none py-2.5">
                     <button type="button" id="qty-plus"
-                            class="px-3 py-2.5 text-gray-500 hover:text-gray-900 transition-colors text-lg leading-none"
+                            class="px-3 py-2.5 text-gray-500 hover:text-gray-900 transition-colors text-lg leading-none cursor-pointer"
                             aria-label="Aumenta">+</button>
                 </div>
 
@@ -142,14 +149,6 @@
                 </button>
             </form>
 
-            {{-- Stock --}}
-            @if($product->manage_stock)
-                @if($product->stock_quantity > 0)
-                    <p class="text-xs text-green-600 mb-4">✓ Disponibile ({{ $product->stock_quantity }} in magazzino)</p>
-                @else
-                    <p class="text-xs text-red-500 mb-4">✕ Esaurito</p>
-                @endif
-            @endif
 
             {{-- Descrizione breve --}}
             @if($product->short_description)
@@ -157,20 +156,15 @@
                     {{ $product->short_description }}
                 </p>
             @endif
-
-            {{-- SKU --}}
-            @if($product->sku)
-                <p class="text-xs text-gray-400 mt-4">SKU: {{ $product->sku }}</p>
-            @endif
         </div>
     </div>
 
     {{-- ===== DESCRIZIONE COMPLETA ===== --}}
-    @if($product->description)
+    @if($product->description && strip_tags($product->description))
     <div class="mt-16 border-t border-gray-100 pt-12">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Descrizione</h2>
         <div class="prose prose-sm max-w-none text-gray-600">
-            {!! nl2br(e($product->description)) !!}
+            {!! $product->description !!}
         </div>
     </div>
     @endif
@@ -181,7 +175,7 @@
         <h2 class="section-heading mb-8">Potrebbe interessarti</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             @foreach($related as $relProduct)
-                <x-product-card :product="$relProduct" />
+                <x-product-card :product="$relProduct" :wishlisted="in_array($relProduct->id, $wishlistIds)" />
             @endforeach
         </div>
     </div>

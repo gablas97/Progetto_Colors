@@ -54,6 +54,7 @@ class ImagesRelationManager extends RelationManager
             Section::make()->schema([
                 ImageEntry::make('image')
                     ->label('Immagine')
+                    ->disk('public')
                     ->height(200)
                     ->columnSpanFull(),
 
@@ -80,6 +81,7 @@ class ImagesRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Anteprima')
+                    ->disk('public')
                     ->square()
                     ->imageSize(80),
 

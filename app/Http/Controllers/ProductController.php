@@ -12,6 +12,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::active()
+            ->where('manage_stock', true)
             ->with(['brand', 'categories', 'variants' => fn ($q) => $q->active()])
             ->orderBy('order');
 
@@ -46,6 +47,7 @@ class ProductController extends Controller
     public function show(string $slug)
     {
         $product = Product::active()
+            ->where('manage_stock', true)
             ->where('slug', $slug)
             ->with([
                 'brand',
@@ -58,8 +60,8 @@ class ProductController extends Controller
         $product->incrementViews();
 
         $related = Product::active()
-            ->whereHas('categories', fn ($q) => $q->whereIn('id', $product->categories->pluck('id')))
-            ->where('id', '!=', $product->id)
+            ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $product->categories->pluck('id')))
+            ->where('products.id', '!=', $product->id)
             ->with(['variants' => fn ($q) => $q->active()])
             ->limit(4)
             ->get();

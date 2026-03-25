@@ -54,7 +54,8 @@ class ProductsTable
                     ->boolean(),
                 IconColumn::make('manage_stock')
                     ->boolean(),
-                ImageColumn::make('main_image'),
+                ImageColumn::make('main_image')
+                    ->disk('public'),
                 TextColumn::make('order')
                     ->numeric()
                     ->sortable(),

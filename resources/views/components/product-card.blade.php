@@ -1,4 +1,4 @@
-@props(['product'])
+@props(['product', 'wishlisted' => false])
 
 <div class="group">
     {{-- Immagine + wishlist --}}
@@ -17,13 +17,20 @@
             @endif
         </a>
 
+        {{-- Badge esaurito --}}
+        @if(!$product->isInStock())
+            <div class="absolute inset-0 bg-white/60 flex items-center justify-center pointer-events-none">
+                <span class="bg-gray-800 text-white text-xs font-medium px-3 py-1 tracking-wide uppercase">Esaurito</span>
+            </div>
+        @endif
+
         {{-- Wishlist --}}
         <button
-            class="absolute top-2.5 right-2.5 w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
+            class="absolute top-2.5 right-2.5 w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
             aria-label="Aggiungi alla wishlist"
             data-action="wishlist"
             data-product-id="{{ $product->id }}">
-            <svg class="w-4 h-4 text-gray-400 hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="w-4 h-4 transition-colors {{ $wishlisted ? 'text-red-400 fill-red-400' : 'text-gray-400' }}" fill="{{ $wishlisted ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
             </svg>
         </button>
@@ -67,10 +74,10 @@
 
         {{-- Aggiungi al carrello --}}
         <button
-            class="flex-shrink-0 w-8 h-8 bg-gray-900 text-white flex items-center justify-center hover:bg-primary transition-colors"
+            class="flex-shrink-0 w-8 h-8 text-white flex items-center justify-center transition-colors {{ $product->isInStock() ? 'bg-gray-900 hover:bg-primary cursor-pointer' : 'bg-gray-300 cursor-not-allowed' }}"
             aria-label="Aggiungi al carrello"
-            data-action="add-to-cart"
-            data-product-id="{{ $product->id }}">
+            @if($product->isInStock()) data-action="add-to-cart" data-product-id="{{ $product->id }}" @endif
+            @disabled(!$product->isInStock())>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>

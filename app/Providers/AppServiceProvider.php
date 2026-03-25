@@ -10,6 +10,7 @@ use App\Observers\CategoryObserver;
 use App\Observers\OrderObserver;
 use App\Observers\ProductObserver;
 use App\Observers\ReviewObserver;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,5 +26,12 @@ class AppServiceProvider extends ServiceProvider
         Order::observe(OrderObserver::class);
         Product::observe(ProductObserver::class);
         Review::observe(ReviewObserver::class);
+
+        View::composer('*', function ($view) {
+            $wishlistIds = auth()->check()
+                ? auth()->user()->wishlists()->pluck('product_id')->all()
+                : [];
+            $view->with('wishlistIds', $wishlistIds);
+        });
     }
 }

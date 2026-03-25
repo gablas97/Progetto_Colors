@@ -70,7 +70,7 @@
     @if($products->isNotEmpty())
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
             @foreach($products as $product)
-                <x-product-card :product="$product" />
+                <x-product-card :product="$product" :wishlisted="in_array($product->id, $wishlistIds)" />
             @endforeach
         </div>
 

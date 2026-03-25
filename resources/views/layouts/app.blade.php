@@ -19,7 +19,7 @@
 
     <x-navbar />
 
-    <main>
+    <main class="min-h-screen">
         @yield('content')
     </main>
 

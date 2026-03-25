@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
-use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -52,7 +51,7 @@ class CartController extends Controller
         $quantity = $request->integer('quantity', 1);
 
         $cart = $this->resolveCart();
-        $cart->addItem($product->id, $request->product_variant_id, $quantity);
+        $cart->addItem($product, $request->product_variant_id, $quantity);
         $this->syncCartCount($cart);
 
         if ($request->expectsJson()) {
@@ -69,7 +68,7 @@ class CartController extends Controller
         $request->validate(['quantity' => ['required', 'integer', 'min:1', 'max:99']]);
 
         $cart = $this->resolveCart();
-        $cart->updateItemQuantity($item->id, $request->integer('quantity'));
+        $cart->updateItemQuantity($item, $request->integer('quantity'));
         $this->syncCartCount($cart);
 
         return back();
@@ -80,7 +79,7 @@ class CartController extends Controller
         $this->authorizeItem($item);
 
         $cart = $this->resolveCart();
-        $cart->removeItem($item->id);
+        $cart->removeItem($item);
         $this->syncCartCount($cart);
 
         return back()->with('success', 'Prodotto rimosso dal carrello.');

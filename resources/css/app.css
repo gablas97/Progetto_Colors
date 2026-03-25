@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "./style.css";
 
+@source "../views";
+@source "../js";
+
 @theme {
   --color-primary: #E8845A;
   --color-primary-dark: #d0704a;

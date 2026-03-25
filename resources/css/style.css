@@ -14,7 +14,7 @@
 
   /* Navigation */
   .nav-link {
-    @apply text-xs font-semibold tracking-widest uppercase text-gray-700 hover:text-primary transition-colors duration-150;
+    @apply text-xs font-semibold tracking-widest uppercase text-gray-700 hover:text-primary transition-colors duration-150 cursor-pointer;
   }
 
   /* Forms */

@@ -75,6 +75,7 @@ class VariantsRelationManager extends RelationManager
             Section::make()->schema([
                 ImageEntry::make('image')
                     ->label('Immagine')
+                    ->disk('public')
                     ->height(150)
                     ->columnSpanFull(),
 
@@ -117,6 +118,7 @@ class VariantsRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Immagine')
+                    ->disk('public')
                     ->circular()
                     ->defaultImageUrl(url('/images/image-placeholder.jpg')),
 

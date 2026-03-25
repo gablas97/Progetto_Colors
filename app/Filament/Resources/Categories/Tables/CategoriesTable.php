@@ -27,7 +27,8 @@ class CategoriesTable
                     ->searchable(),
                 TextColumn::make('parent.name')
                     ->searchable(),
-                ImageColumn::make('image'),
+                ImageColumn::make('image')
+                    ->disk('public'),
                 TextColumn::make('order')
                     ->numeric()
                     ->sortable(),

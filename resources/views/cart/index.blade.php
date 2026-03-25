@@ -116,18 +116,16 @@
                         <p class="text-xs text-gray-400 mt-1">IVA inclusa</p>
                     </div>
 
-                    @auth
-                        <a href="{{ route('checkout.index') }}" class="btn-primary block text-center w-full">
-                            Procedi al checkout
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="btn-primary block text-center w-full mb-3">
-                            Accedi per continuare
-                        </a>
-                        <p class="text-xs text-center text-gray-400">
-                            oppure <a href="{{ route('register') }}" class="text-primary hover:underline">crea un account</a>
-                        </p>
-                    @endauth
+                    <a href="{{ route('checkout.index') }}" class="btn-primary block text-center w-full">
+                        Procedi al checkout
+                    </a>
+
+                    @guest
+                    <p class="text-xs text-center text-gray-400 mt-2">
+                        <a href="{{ route('login') }}" class="text-primary hover:underline">Accedi</a>
+                        o continua come ospite
+                    </p>
+                    @endguest
 
                     <a href="{{ route('products.index') }}" class="block text-center text-xs text-gray-400 hover:text-gray-600 transition-colors mt-4">
                         ← Continua lo shopping

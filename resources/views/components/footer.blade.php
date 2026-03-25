@@ -30,13 +30,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
-                            Via Umbria 35, 74121 Taranto
+                            <a href="https://maps.app.goo.gl/8gU5VBw9cQyEzHc87" target="_blank" class="hover:text-white transition-colors">Via Umbria 35, 74121 Taranto</a>
                         </li>
                         <li class="flex items-center gap-2">
                             <svg class="w-4 h-4 flex-shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                             </svg>
-                            <a href="tel:+390997566406" class="hover:text-white transition-colors">+39 099 7566 4061</a>
+                            <a href="tel:+390997364061" class="hover:text-white transition-colors">+39 099 736 4061</a>
                         </li>
                         <li class="flex items-center gap-2">
                             <svg class="w-4 h-4 flex-shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -52,10 +52,10 @@
                     <h3 class="text-xs font-semibold tracking-widest uppercase text-gray-300 mb-4">Orari</h3>
                     <ul class="space-y-1 text-sm text-gray-400">
                         <li>Lunedì – Venerdì</li>
-                        <li class="text-white font-medium">08:00 – 13:30 &nbsp;/&nbsp; 17:00 – 20:00</li>
+                        <li class="text-white font-medium">08:00 – 13:30 &nbsp;/&nbsp; 16:30 – 20:00</li>
                         <li class="mt-3">Sabato</li>
                         <li class="text-white font-medium">08:00 – 13:00</li>
-                        <li class="mt-3 text-gray-500 italic text-xs">Domenica: chiuso</li>
+                        <li class="mt-3 text-gray-500 italic">Domenica: chiuso</li>
                     </ul>
                 </div>
             </div>

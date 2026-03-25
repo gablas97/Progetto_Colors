@@ -33,6 +33,7 @@ class LowStockAlert extends TableWidget
             ->columns([
                 ImageColumn::make('main_image')
                     ->label('Immagine')
+                    ->disk('public')
                     ->square()
                     ->defaultImageUrl(url('/images/image-placeholder.jpg')),
 

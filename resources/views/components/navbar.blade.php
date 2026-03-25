@@ -42,7 +42,7 @@
             <div class="hidden md:flex items-center gap-6">
                 @auth
                     <div class="relative group">
-                        <button class="nav-link flex items-center gap-1">
+                        <button class="nav-link flex items-center gap-1 cursor-pointer">
                             Account
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -56,7 +56,7 @@
                             <hr class="my-1 border-gray-100">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="block w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-gray-50 tracking-wide">
+                                <button type="submit" class="block w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-gray-50 tracking-wide cursor-pointer">
                                     Esci
                                 </button>
                             </form>
@@ -70,7 +70,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
-                    Carrello ({{ $cartCount }})
+                    <span>Carrello (<span data-cart-count>{{ $cartCount }}</span>)</span>
                 </a>
             </div>
 
@@ -102,7 +102,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            Carrello ({{ $cartCount }})
+            Carrello (<span data-cart-count>{{ $cartCount }}</span>)
         </a>
     </div>
 </nav>
