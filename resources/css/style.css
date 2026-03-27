@@ -8,8 +8,16 @@
     @apply inline-block border border-gray-800 text-gray-800 px-8 py-3 text-xs font-semibold tracking-widest uppercase hover:bg-gray-800 hover:text-white transition-colors duration-200 cursor-pointer;
   }
 
+  .btn-dark {
+    @apply inline-block text-white bg-gray-800 px-8 py-3 text-xs font-semibold tracking-widest uppercase hover:bg-white hover:text-gray-800 transition-colors duration-200 cursor-pointer;
+  }
+
   .btn-outline-white {
     @apply inline-block border border-white text-white px-8 py-3 text-xs font-semibold tracking-widest uppercase hover:bg-white hover:text-gray-900 transition-colors duration-200 cursor-pointer;
+  }
+
+  .btn-white {
+    @apply inline-block text-gray-900 bg-white px-8 py-3 text-xs font-semibold tracking-widest uppercase hover:bg-gray-800 hover:text-white transition-colors duration-200 cursor-pointer bg-gray-800;
   }
 
   /* Navigation */
@@ -24,6 +32,38 @@
 
   .form-label {
     @apply block text-xs font-semibold tracking-wider text-gray-600 mb-1.5 uppercase;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    display: inline-block;
+    background-color: #ef4444;
+    color: #fff;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .btn-danger:hover {
+    background-color: #dc2626;
+  }
+
+  /* Category cards */
+  .cat-card-img {
+    transition: transform 0.7s ease;
+  }
+  .cat-card:hover .cat-card-img {
+    transform: scale(1.05);
+  }
+  .cat-card-label {
+    color: rgba(255, 255, 255, 0);
+    transition: color 0.5s ease;
+  }
+  .cat-card:hover .cat-card-label {
+    color: rgba(255, 255, 255, 0.85);
   }
 
   /* Typography helpers */

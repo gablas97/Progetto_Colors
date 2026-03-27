@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Colors S.r.l. — Cartoleria, Stampe e Articoli Regalo a Taranto')
+@section('title', 'Colors S.r.l. - Cartoleria, Stampe e Articoli Regalo a Taranto')
 
 @section('content')
 
@@ -9,7 +9,7 @@
              style="background-image: url('{{ asset('images/hero.jpg') }}'); background-size: cover; background-position: center;">
         <div class="absolute inset-0 bg-black/20"></div>
         <div class="relative z-10 text-center">
-            <a href="{{ route('products.index') }}" class="btn-outline-white">
+            <a href="{{ route('products.index') }}" class="btn-white">
                 Scopri i nostri prodotti
             </a>
         </div>
@@ -24,16 +24,16 @@
                         Sogna la tua vita a colori.<br>
                         <em>È il segreto della felicità.</em>
                     </blockquote>
-                    <p class="text-sm text-gray-400 mb-10">— Walt Disney</p>
+                    <p class="text-sm text-gray-400 mb-10">- Walt Disney</p>
                     <a href="{{ route('products.index') }}" class="btn-outline-dark">
                         Scopri i nostri prodotti
                     </a>
                 </div>
-                <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
-                    <img src="{{ asset('images/quote-image.jpg') }}"
-                         alt="Colori e creatività"
-                         class="w-full h-full object-cover"
-                         onerror="this.style.display='none'">
+                <div class="overflow-hidden">
+                    <img src="{{ asset('images/quote-image.png') }}"
+                        alt="Colori e creatività"
+                        class="w-full h-full object-cover"
+                        data-hide-on-error>
                 </div>
             </div>
         </div>
@@ -70,32 +70,39 @@
                 I nostri <span class="underline-accent">prodotti</span>
             </h2>
 
-            @if($categories->isNotEmpty())
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($categories as $category)
-                    <a href="{{ route('products.index', ['categoria' => $category->slug]) }}"
-                       class="group block overflow-hidden">
-                        <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
-                            @if($category->image)
-                                <img src="{{ Storage::url($category->image) }}"
-                                     alt="{{ $category->name }}"
-                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                            @else
-                                <div class="w-full h-full flex items-center justify-center bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                                    <span class="text-4xl font-light text-gray-300">{{ mb_substr($category->name, 0, 1) }}</span>
-                                </div>
-                            @endif
-                        </div>
-                        <div class="pt-4">
-                            <h3 class="font-semibold text-gray-900 group-hover:text-primary transition-colors">{{ $category->name }}</h3>
-                            <p class="text-xs text-gray-400 mt-1">Scopri di più</p>
-                        </div>
-                    </a>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-gray-400 text-sm">Nessuna categoria disponibile al momento.</p>
-            @endif
+            @php
+            $shopCats = [
+                ['name' => 'Cartoleria',         'slug' => 'cartoleria',         'img' => 'hero.jpg',  'wide' => true],
+                ['name' => 'Cancelleria',         'slug' => 'cancelleria',        'img' => 'cat-cancelleria.jpg', 'wide' => false],
+                ['name' => 'Ufficio',             'slug' => 'ufficio',            'img' => 'cat-ufficio.jpg',     'wide' => false],
+                ['name' => 'Scuola',              'slug' => 'scuola',             'img' => 'cat-scuola.jpg',      'wide' => true],
+                ['name' => 'Promozioni',          'slug' => 'promozioni',         'img' => 'cat-promozioni.jpg',  'wide' => true],
+                ['name' => 'Articoli da regalo',  'slug' => 'articoli-da-regalo', 'img' => 'cat-regalo.jpg',      'wide' => false],
+            ];
+            @endphp
+
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3" style="grid-auto-rows:220px">
+                @foreach($shopCats as $cat)
+                <a href="{{ route('products.index', ['categoria' => $cat['slug']]) }}"
+                   class="cat-card relative overflow-hidden bg-gray-100 block {{ $cat['wide'] ? 'lg:col-span-2' : '' }}">
+
+                    <img src="{{ asset('images/' . $cat['img']) }}"
+                         alt="{{ $cat['name'] }}"
+                         class="cat-card-img absolute inset-0 w-full h-full object-cover"
+                         data-hide-on-error>
+
+                    <div class="absolute inset-0"
+                         style="background:linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)"></div>
+
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                        <h3 class="text-white font-semibold leading-tight {{ $cat['wide'] ? 'text-xl md:text-2xl' : 'text-sm md:text-base' }}">
+                            {{ $cat['name'] }}
+                        </h3>
+                        <p class="cat-card-label text-xs mt-2">Scopri di più</p>
+                    </div>
+                </a>
+                @endforeach
+            </div>
         </div>
     </section>
 
@@ -119,10 +126,10 @@
     @endif
 
     {{-- ===== CTA NEGOZIO ===== --}}
-    <section class="relative h-72 flex items-center justify-center overflow-hidden bg-dark"
-             style="background-image: url('{{ asset('images/store-cta.jpg') }}'); background-size: cover; background-position: center;">
-        <div class="absolute inset-0 bg-dark/60"></div>
-        <div class="relative z-10 text-center">
+    <section class="relative flex items-center justify-end overflow-hidden"
+            style="height:500px; background-image: url('{{ asset('images/store-cta.png') }}'); background-size: cover; background-position: center;">
+        <div class="absolute inset-0"></div>
+        <div class="relative z-10 text-center" style="margin-left:auto; margin-right:25%; width:280px;">
             <h2 class="text-3xl md:text-4xl font-light text-white mb-6">
                 Visita il nostro negozio
             </h2>
@@ -141,7 +148,7 @@
                     <p class="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">Chi siamo</p>
                     <h2 class="text-2xl font-semibold text-gray-900 mb-6">Colors S.r.l.</h2>
                     <p class="text-sm text-gray-500 leading-relaxed mb-4">Via Umbria 35, 74121 Taranto</p>
-                    <p class="text-sm text-gray-500 leading-relaxed mb-1">Lun – Ven: 08:00 – 13:30 / 17:00 – 20:00</p>
+                    <p class="text-sm text-gray-500 leading-relaxed mb-1">Lun – Ven: 08:00 – 13:30 / 16:30 – 20:00</p>
                     <p class="text-sm text-gray-500 leading-relaxed">Sabato: 08:00 – 13:00</p>
                 </div>
 

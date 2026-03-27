@@ -1,7 +1,9 @@
 @extends('layouts.app')
-@section('title', '404 — Pagina non trovata')
+
+@section('title', '404 - Pagina non trovata')
 
 @section('content')
+
 <div class="min-h-screen flex items-center justify-center px-4">
     <div class="text-center max-w-md">
         <p class="text-7xl font-bold text-primary mb-4">404</p>
@@ -10,4 +12,5 @@
         <a href="{{ route('home') }}" class="btn-primary">Torna alla home</a>
     </div>
 </div>
+
 @endsection

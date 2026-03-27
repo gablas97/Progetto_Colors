@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $service->name . ' — Colors S.r.l.')
+@section('title', $service->name . ' - Colors S.r.l.')
 @section('description', $service->short_description ?? $service->name)
 
 @section('content')

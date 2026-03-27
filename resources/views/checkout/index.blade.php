@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Checkout — Colors S.r.l.')
+@section('title', 'Checkout - Colors S.r.l.')
 
 @section('content')
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -35,14 +35,14 @@
                     <div>
                         <label class="form-label">Nome *</label>
                         <input type="text" name="shipping_first_name"
-                            value="{{ old('shipping_first_name', $defaultAddress?->first_name ?? auth()->user()->first_name) }}"
+                            value="{{ old('shipping_first_name', $defaultAddress?->first_name ?? auth()->user()?->first_name) }}"
                             required class="input-field @error('shipping_first_name') border-red-400 @enderror">
                         @error('shipping_first_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="form-label">Cognome *</label>
                         <input type="text" name="shipping_last_name"
-                            value="{{ old('shipping_last_name', $defaultAddress?->last_name ?? auth()->user()->last_name) }}"
+                            value="{{ old('shipping_last_name', $defaultAddress?->last_name ?? auth()->user()?->last_name) }}"
                             required class="input-field @error('shipping_last_name') border-red-400 @enderror">
                         @error('shipping_last_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
@@ -91,7 +91,7 @@
                     <div>
                         <label class="form-label">Telefono</label>
                         <input type="tel" name="shipping_phone"
-                            value="{{ old('shipping_phone', $defaultAddress?->phone ?? auth()->user()->phone) }}"
+                            value="{{ old('shipping_phone', $defaultAddress?->phone ?? auth()->user()?->phone) }}"
                             class="input-field">
                     </div>
                 </div>
@@ -106,7 +106,7 @@
 
         {{-- ===== COLONNA DESTRA: riepilogo ordine ===== --}}
         <div class="lg:col-span-1">
-            <div class="border border-gray-200 p-6 sticky top-6">
+            <div class="border border-gray-200 p-6">
                 <h2 class="text-sm font-semibold tracking-wider uppercase text-gray-400 mb-5">Riepilogo ordine</h2>
 
                 <div class="space-y-3 mb-5">

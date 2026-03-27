@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($activeCategory ? $activeCategory->name . ' — ' : '') . 'Prodotti — Colors S.r.l.')
+@section('title', ($activeCategory ? $activeCategory->name . ' - ' : '') . 'Prodotti - Colors S.r.l.')
 
 @section('content')
 
@@ -24,7 +24,7 @@
         {{-- Filtri --}}
         <form method="GET" action="{{ route('products.index') }}" class="flex items-center gap-2">
             <select name="categoria"
-                    onchange="this.form.submit()"
+                    data-auto-submit
                     class="border border-gray-200 text-sm px-3 py-2 text-gray-700 focus:outline-none focus:border-primary bg-white">
                 <option value="">Tutte le categorie</option>
                 @foreach($categories as $cat)
@@ -35,7 +35,7 @@
             </select>
 
             <select name="marca"
-                    onchange="this.form.submit()"
+                    data-auto-submit
                     class="border border-gray-200 text-sm px-3 py-2 text-gray-700 focus:outline-none focus:border-primary bg-white">
                 <option value="">Tutte le marche</option>
                 @foreach($brands as $brand)
@@ -58,7 +58,7 @@
                 </button>
             </div>
 
-            @if(request()->hasAny(['categoria', 'marca', 'q']))
+            @if(request('categoria') || request('marca') || request('q'))
                 <a href="{{ route('products.index') }}" class="text-xs text-gray-400 hover:text-red-400 transition-colors whitespace-nowrap">
                     ✕ Azzera
                 </a>
@@ -83,9 +83,6 @@
     @else
         <div class="text-center py-24">
             <p class="text-gray-400 text-sm">Nessun prodotto trovato con i filtri selezionati.</p>
-            <a href="{{ route('products.index') }}" class="inline-block mt-4 text-xs font-semibold tracking-wider uppercase text-primary hover:text-primary-dark transition-colors">
-                Vedi tutti i prodotti
-            </a>
         </div>
     @endif
 

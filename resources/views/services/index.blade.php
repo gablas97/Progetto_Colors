@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Servizi — Colors S.r.l.')
-@section('description', 'Stampe, fotocopie, grafica personalizzata e timbri — Colors S.r.l. Taranto.')
+@section('title', 'Servizi - Colors S.r.l.')
+@section('description', 'Stampe, fotocopie, grafica personalizzata e timbri - Colors S.r.l. Taranto.')
 
 @section('content')
 
@@ -68,7 +68,7 @@
                     <img src="{{ asset('images/services-print.jpg') }}"
                          alt="Stampe e fotocopie"
                          class="w-full h-full object-cover"
-                         onerror="this.style.display='none'">
+                         data-hide-on-error>
                 </div>
             </div>
         </div>

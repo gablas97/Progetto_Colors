@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
@@ -22,7 +23,7 @@ Route::get('/servizi/{slug}', [ServiceController::class, 'show'])->name('service
 
 /*
 |--------------------------------------------------------------------------
-| Carrello (accessibile anche agli ospiti)
+| Carrello
 |--------------------------------------------------------------------------
 */
 Route::get('/carrello', [CartController::class, 'index'])->name('cart.index');
@@ -32,11 +33,11 @@ Route::delete('/carrello/{item}', [CartController::class, 'remove'])->name('cart
 
 /*
 |--------------------------------------------------------------------------
-| Checkout (richiede autenticazione)
+| Checkout
 |--------------------------------------------------------------------------
 */
-Route::get('/checkout',          [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout',         [CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/successo', [CheckoutController::class, 'success'])->name('checkout.success');
 
 /*
@@ -55,6 +56,30 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 /*
 |--------------------------------------------------------------------------
+| Verifica email
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verifica', [VerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verifica/{id}/{hash}', [VerificationController::class, 'verify'])
+        ->middleware('signed')
+        ->name('verification.verify');
+    Route::post('/email/verifica/reinvia', [VerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Riattivazione account (link firmato, no auth richiesta)
+|--------------------------------------------------------------------------
+*/
+Route::get('/account/riattiva/{id}', [AccountController::class, 'reactivate'])
+    ->middleware('signed')
+    ->name('account.reactivate');
+
+/*
+|--------------------------------------------------------------------------
 | Area utente (richiede autenticazione)
 |--------------------------------------------------------------------------
 */
@@ -69,4 +94,5 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     Route::post('/wishlist/{product}', [AccountController::class, 'toggleWishlist'])->name('wishlist.toggle');
     Route::get('/profilo', [AccountController::class, 'editProfile'])->name('profile');
     Route::patch('/profilo', [AccountController::class, 'updateProfile'])->name('profile.update');
+    Route::delete('/', [AccountController::class, 'destroy'])->name('destroy');
 });

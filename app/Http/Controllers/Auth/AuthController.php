@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\WelcomeMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -29,7 +31,7 @@ class AuthController extends Controller
             // Merge del carrello ospite con quello dell'utente
             if ($sessionId = session('cart_session_id')) {
                 $guestCart = \App\Models\Cart::where('session_id', $sessionId)->first();
-                $guestCart?->convertToUser(Auth::id());
+                $guestCart?->convertToUser(Auth::user());
                 session()->forget('cart_session_id');
             }
 
@@ -71,7 +73,10 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('account.index');
+        $user->sendEmailVerificationNotification();
+        Mail::to($user->email)->send(new WelcomeMail($user));
+
+        return redirect()->route('verification.notice');
     }
 
     public function logout(Request $request)

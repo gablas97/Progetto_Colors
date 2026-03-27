@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Profilo — Colors S.r.l.')
+@section('title', 'Profilo - Colors S.r.l.')
 
 @section('content')
 <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -73,6 +73,37 @@
 
         <button type="submit" class="btn-primary">Salva modifiche</button>
     </form>
+
+    {{-- Zona pericolo: eliminazione account --}}
+    <div class="mt-12 border border-red-100 p-6">
+        <h2 class="text-sm font-semibold tracking-wider uppercase text-red-400 mb-2">Elimina account</h2>
+        <p class="text-sm text-gray-500 mb-5">
+            Eliminando l'account non potrai più accedere alla tua area personale. I dati degli ordini precedenti verranno conservati.
+            Riceverai un'email con un link per annullare l'operazione entro 7 giorni.
+        </p>
+
+        <button type="button" id="delete-toggle-btn"
+                class="text-xs font-semibold tracking-wider uppercase text-red-400 hover:text-red-600 transition-colors border border-red-200 hover:border-red-400 px-5 py-2.5 cursor-pointer">
+            Procedi
+        </button>
+
+        <form id="delete-account-form" method="POST" action="{{ route('account.destroy') }}"
+              class="hidden mt-6 space-y-4">
+            @csrf @method('DELETE')
+            <div>
+                <label class="form-label">Conferma con la tua password</label>
+                <input type="password" name="password" required
+                       placeholder="La tua password attuale"
+                       class="input-field @error('password', 'deleteAccount') border-red-400 @enderror">
+                @error('password', 'deleteAccount')
+                    <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <button type="submit" class="btn-danger">
+                Elimina il mio account
+            </button>
+        </form>
+    </div>
 
 </div>
 @endsection

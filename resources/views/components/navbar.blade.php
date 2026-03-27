@@ -107,16 +107,3 @@
     </div>
 </nav>
 
-@push('scripts')
-<script>
-    (function () {
-        const btn  = document.getElementById('mobile-menu-btn');
-        const menu = document.getElementById('mobile-menu');
-        btn.addEventListener('click', function () {
-            const open = !menu.classList.contains('hidden');
-            menu.classList.toggle('hidden', open);
-            btn.setAttribute('aria-expanded', String(!open));
-        });
-    })();
-</script>
-@endpush

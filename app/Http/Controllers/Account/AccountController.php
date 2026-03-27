@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AccountDeactivatedMail;
 use App\Models\Address;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rules\Password;
 
 class AccountController extends Controller
@@ -140,5 +145,47 @@ class AccountController extends Controller
         $user->save();
 
         return back()->with('success', 'Profilo aggiornato con successo.');
+    }
+
+    public function destroy(Request $request)
+    {
+        $request->validateWithBag('deleteAccount', [
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['password' => 'La password non è corretta.'], 'deleteAccount');
+        }
+
+        $reactivationUrl = URL::temporarySignedRoute(
+            'account.reactivate',
+            now()->addDays(7),
+            ['id' => $user->id]
+        );
+
+        $user->update(['is_active' => false]);
+
+        Mail::to($user->email)->send(new AccountDeactivatedMail($user, $reactivationUrl));
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('home')->with('success', 'Il tuo account è stato eliminato. Controlla l\'email per annullare l\'operazione.');
+    }
+
+    public function reactivate(Request $request, int $id)
+    {
+        $user = User::where('id', $id)->where('is_active', false)->first();
+
+        if (! $user) {
+            return redirect()->route('login')->with('error', 'Link non valido o account già attivo.');
+        }
+
+        $user->update(['is_active' => true]);
+
+        return redirect()->route('login')->with('success', 'Account riattivato con successo. Puoi ora accedere.');
     }
 }

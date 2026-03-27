@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $product->name . ' — Colors S.r.l.')
+@section('title', $product->name . ' - Colors S.r.l.')
 @section('description', $product->short_description ?? $product->name)
 
 @section('content')
@@ -66,7 +66,7 @@
             @if($gallery->count() > 1)
             <div class="flex gap-2 overflow-x-auto pb-1">
                 @foreach($gallery as $i => $imgUrl)
-                    <button onclick="document.getElementById('main-image').src='{{ $imgUrl }}'"
+                    <button data-thumb="{{ $imgUrl }}"
                             class="flex-shrink-0 w-16 h-16 border-2 border-transparent hover:border-primary transition-colors overflow-hidden bg-gray-50">
                         <img src="{{ $imgUrl }}" alt="Immagine {{ $i + 1 }}" class="w-full h-full object-cover">
                     </button>
@@ -126,26 +126,34 @@
             @endif
 
             {{-- Quantità + CTA --}}
+            @php
+                $outOfStock = $product->manage_stock && !$product->isInStock();
+                $allVariantsOut = $product->variants->isNotEmpty() && $product->variants->every(fn($v) => !$v->isInStock());
+                $disableCart = $outOfStock || $allVariantsOut;
+            @endphp
             <form action="{{ route('cart.add') }}" method="POST" class="flex items-center gap-3 mb-6">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                 <input type="hidden" name="product_variant_id" id="selected-variant" value="">
 
                 {{-- Selettore quantità --}}
-                <div class="flex items-center border border-gray-200">
+                <div class="flex items-center border border-gray-200 {{ $disableCart ? 'opacity-40' : '' }}">
                     <button type="button" id="qty-minus"
-                            class="px-3 py-2.5 text-gray-500 hover:text-gray-900 transition-colors text-lg leading-none cursor-pointer"
-                            aria-label="Diminuisci">−</button>
+                            class="px-3 py-2.5 text-gray-500 text-lg leading-none {{ $disableCart ? 'cursor-not-allowed' : 'hover:text-gray-900 transition-colors cursor-pointer' }}"
+                            aria-label="Diminuisci" {{ $disableCart ? 'disabled' : '' }}>−</button>
                     <input type="number" name="quantity" id="qty-input"
                            value="1" min="1" max="99"
-                           class="w-12 text-center text-sm border-0 focus:outline-none py-2.5">
+                           class="w-12 text-center text-sm border-0 focus:outline-none py-2.5 {{ $disableCart ? 'cursor-not-allowed' : '' }}"
+                           {{ $disableCart ? 'disabled' : '' }}>
                     <button type="button" id="qty-plus"
-                            class="px-3 py-2.5 text-gray-500 hover:text-gray-900 transition-colors text-lg leading-none cursor-pointer"
-                            aria-label="Aumenta">+</button>
+                            class="px-3 py-2.5 text-gray-500 text-lg leading-none {{ $disableCart ? 'cursor-not-allowed' : 'hover:text-gray-900 transition-colors cursor-pointer' }}"
+                            aria-label="Aumenta" {{ $disableCart ? 'disabled' : '' }}>+</button>
                 </div>
 
-                <button type="submit" class="btn-primary flex-1 text-center">
-                    Aggiungi al carrello
+                <button type="submit"
+                        class="flex-1 text-center {{ $disableCart ? 'inline-block px-8 py-3 text-xs font-semibold tracking-widest uppercase bg-gray-300 text-gray-500 cursor-not-allowed' : 'btn-primary' }}"
+                        {{ $disableCart ? 'disabled' : '' }}>
+                    {{ $disableCart ? 'Esaurito' : 'Aggiungi al carrello' }}
                 </button>
             </form>
 
@@ -182,27 +190,5 @@
     @endif
 
 </div>
-
-@push('scripts')
-<script>
-    // Selettore quantità
-    const qtyInput = document.getElementById('qty-input');
-    document.getElementById('qty-minus').addEventListener('click', () => {
-        if (qtyInput.value > 1) qtyInput.value = parseInt(qtyInput.value) - 1;
-    });
-    document.getElementById('qty-plus').addEventListener('click', () => {
-        if (qtyInput.value < 99) qtyInput.value = parseInt(qtyInput.value) + 1;
-    });
-
-    // Selettore variante
-    document.querySelectorAll('.variant-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('border-primary', 'text-primary'));
-            btn.classList.add('border-primary', 'text-primary');
-            document.getElementById('selected-variant').value = btn.dataset.variantId;
-        });
-    });
-</script>
-@endpush
 
 @endsection

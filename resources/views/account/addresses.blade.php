@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Indirizzi — Colors S.r.l.')
+@section('title', 'Indirizzi - Colors S.r.l.')
 
 @section('content')
 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

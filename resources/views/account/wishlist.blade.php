@@ -1,7 +1,9 @@
 @extends('layouts.app')
-@section('title', 'Wishlist — Colors S.r.l.')
+
+@section('title', 'Wishlist - Colors S.r.l.')
 
 @section('content')
+
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
     <div class="flex items-center gap-4 mb-8">
@@ -32,4 +34,5 @@
     @endif
 
 </div>
+
 @endsection
