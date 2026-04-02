@@ -1,38 +1,58 @@
 @extends('layouts.app')
 
-@section('title', ($activeCategory ? $activeCategory->name . ' - ' : '') . 'Prodotti - Colors S.r.l.')
+@section('title', ($activeCategory ? $activeCategory->name . ' - Colors S.r.l.' : 'Prodotti - Colors S.r.l.'))
 
 @section('content')
 
+@php
+    $baseParams = array_filter([
+        'marca' => request('marca'),
+        'q'     => request('q'),
+    ]);
+@endphp
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    {{-- Breadcrumb + filtri --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        {{-- Breadcrumb --}}
-        <nav class="text-sm text-gray-500" aria-label="Breadcrumb">
-            <a href="{{ route('home') }}" class="hover:text-primary transition-colors">Home</a>
-            <span class="mx-1.5">&rsaquo;</span>
-            @if($activeCategory)
-                <a href="{{ route('products.index') }}" class="hover:text-primary transition-colors">Prodotti</a>
-                <span class="mx-1.5">&rsaquo;</span>
-                <span class="text-gray-800 font-medium">{{ $activeCategory->name }}</span>
-            @else
-                <span class="text-gray-800 font-medium">Prodotti</span>
-            @endif
-        </nav>
+    {{-- Pill categorie - riga radice --}}
+    <p class="text-xs font-semibold tracking-wider uppercase text-gray-400 mb-2">Categorie</p>
+    <div class="flex flex-wrap items-center gap-2 {{ empty($subLevels) ? 'mb-6' : 'mb-3' }}">
+        <a href="{{ route('products.index', $baseParams) }}"
+           class="pill {{ !$activeCategory ? 'pill-active' : '' }}">
+            Tutte
+        </a>
+        @foreach($rootCategories as $cat)
+            <a href="{{ route('products.index', array_merge($baseParams, ['categoria' => $cat->slug])) }}"
+               class="pill {{ $activeRoot?->slug === $cat->slug ? 'pill-active' : '' }}">
+                {{ $cat->name }}
+            </a>
+        @endforeach
+    </div>
 
-        {{-- Filtri --}}
-        <form method="GET" action="{{ route('products.index') }}" class="flex items-center gap-2">
-            <select name="categoria"
-                    data-auto-submit
-                    class="border border-gray-200 text-sm px-3 py-2 text-gray-700 focus:outline-none focus:border-primary bg-white">
-                <option value="">Tutte le categorie</option>
-                @foreach($categories as $cat)
-                    <option value="{{ $cat->slug }}" @selected(request('categoria') === $cat->slug)>
-                        {{ $cat->name }}
-                    </option>
-                @endforeach
-            </select>
+    {{-- Pill sottocategorie - uno o più livelli --}}
+    @if(!empty($subLevels))
+        <p class="text-xs font-semibold tracking-wider uppercase text-gray-400 mb-2">Sottocategorie</p>
+        @foreach($subLevels as $level)
+        <div class="flex flex-wrap items-center gap-2 {{ $loop->last ? 'mb-6' : 'mb-3' }}">
+            <a href="{{ route('products.index', array_merge($baseParams, ['categoria' => $level['parentSlug']])) }}"
+               class="pill {{ !$level['selected'] ? 'pill-active' : '' }}">
+                Tutte
+            </a>
+            @foreach($level['items'] as $cat)
+                <a href="{{ route('products.index', array_merge($baseParams, ['categoria' => $cat->slug])) }}"
+                   class="pill {{ $level['selected']?->slug === $cat->slug ? 'pill-active' : '' }}">
+                    {{ ucfirst(strtolower($cat->name)) }}
+                </a>
+            @endforeach
+        </div>
+        @endforeach
+    @endif
+
+    {{-- Filtri brand + ricerca --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <form method="GET" action="{{ route('products.index') }}" class="flex items-center gap-2 flex-wrap">
+            @if($activeCategory)
+                <input type="hidden" name="categoria" value="{{ $activeCategory->slug }}">
+            @endif
 
             <select name="marca"
                     data-auto-submit
@@ -40,7 +60,7 @@
                 <option value="">Tutte le marche</option>
                 @foreach($brands as $brand)
                     <option value="{{ $brand->slug }}" @selected(request('marca') === $brand->slug)>
-                        {{ $brand->name }}
+                        {{ ucfirst(strtolower($brand->name)) }}
                     </option>
                 @endforeach
             </select>
@@ -58,9 +78,10 @@
                 </button>
             </div>
 
-            @if(request('categoria') || request('marca') || request('q'))
-                <a href="{{ route('products.index') }}" class="text-xs text-gray-400 hover:text-red-400 transition-colors whitespace-nowrap">
-                    ✕ Azzera
+            @if(request('marca') || request('q'))
+                <a href="{{ route('products.index', array_filter(['categoria' => request('categoria')])) }}"
+                   class="text-xs text-gray-400 hover:text-red-400 transition-colors whitespace-nowrap">
+                    ✕ Azzera filtri
                 </a>
             @endif
         </form>
@@ -74,7 +95,6 @@
             @endforeach
         </div>
 
-        {{-- Paginazione --}}
         @if($products->hasPages())
             <div class="mt-12">
                 {{ $products->links('pagination::tailwind') }}

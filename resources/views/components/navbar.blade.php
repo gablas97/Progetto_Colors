@@ -5,6 +5,8 @@
     } else {
         $cartCount = session('cart_count', 0);
     }
+    // Categorie radice per il dropdown navbar
+    $navRootCategories = \App\Models\Category::active()->rootCategories()->get();
 @endphp
 
 <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
@@ -13,25 +15,32 @@
 
             {{-- Logo placeholder (sostituire con <img> quando arriva il logo) --}}
             <a href="{{ route('home') }}" class="flex items-center gap-2 flex-shrink-0">
-                <svg width="46" height="34" viewBox="0 0 46 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <line x1="23" y1="30" x2="3"  y2="4"  stroke="#E8845A" stroke-width="2.5" stroke-linecap="round"/>
-                    <line x1="23" y1="30" x2="11" y2="2"  stroke="#F5C842" stroke-width="2.5" stroke-linecap="round"/>
-                    <line x1="23" y1="30" x2="23" y2="1"  stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"/>
-                    <line x1="23" y1="30" x2="35" y2="2"  stroke="#2196F3" stroke-width="2.5" stroke-linecap="round"/>
-                    <line x1="23" y1="30" x2="43" y2="4"  stroke="#9C27B0" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-                <div class="leading-tight">
-                    <p class="font-bold tracking-widest text-gray-900 text-sm leading-none">COLORS</p>
-                    <p class="text-[9px] text-gray-400 tracking-widest uppercase leading-none mt-0.5">Sogna la vita a colori</p>
-                </div>
+                <img src="{{ asset('images/logo.png') }}" alt="Logo Colors S.r.l." class="h-16 w-auto">
             </a>
 
             {{-- Link di navigazione (desktop) --}}
             <div class="hidden md:flex items-center gap-8">
-                <a href="{{ route('products.index') }}"
-                   class="nav-link {{ request()->routeIs('products.*') ? 'text-primary' : '' }}">
-                    Prodotti
-                </a>
+                <div class="relative group">
+                    <a href="{{ route('products.index') }}"
+                       class="nav-link flex items-center gap-1 {{ request()->routeIs('products.*') ? 'text-primary' : '' }}">
+                        Prodotti
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </a>
+                    <div class="absolute left-0 top-full mt-1 bg-white shadow-lg border border-gray-100 py-2 w-52 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50">
+                        <a href="{{ route('products.index') }}"
+                           class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide border-b border-gray-200 mb-1">
+                            Tutti i prodotti
+                        </a>
+                        @foreach($navRootCategories as $cat)
+                            <a href="{{ route('products.index', ['categoria' => $cat->slug]) }}"
+                               class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">
+                                {{ $cat->name }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
                 <a href="{{ route('services') }}"
                    class="nav-link {{ request()->routeIs('services') ? 'text-primary' : '' }}">
                     Servizi
@@ -43,17 +52,17 @@
                 @auth
                     <div class="relative group">
                         <button class="nav-link flex items-center gap-1 cursor-pointer">
-                            Account
+                            <a href="{{ route('account.index') }}">{{ auth()->user()->first_name }}</a>
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </button>
                         <div class="absolute right-0 top-full mt-1 bg-white shadow-lg border border-gray-100 py-2 w-44 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150">
-                            <a href="{{ route('account.index') }}"     class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">Il mio profilo</a>
-                            <a href="{{ route('account.orders') }}"    class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">I miei ordini</a>
-                            <a href="{{ route('account.wishlist') }}"  class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">Wishlist</a>
-                            <a href="{{ route('account.addresses') }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">Indirizzi</a>
-                            <hr class="my-1 border-gray-100">
+                            <a href="{{ route('account.index') }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide border-b border-gray-200 mb-1">Account</a>
+                            <a href="{{ route('account.profile') }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">Il mio profilo</a>
+                            <a href="{{ route('account.orders') }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">I miei ordini</a>
+                            <a href="{{ route('account.wishlist') }}" class="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 tracking-wide">Wishlist</a>
+                            <hr class="my-1 border-gray-200">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="block w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-gray-50 tracking-wide cursor-pointer">
@@ -66,12 +75,41 @@
                     <a href="{{ route('login') }}" class="nav-link">Account</a>
                 @endauth
 
+                @if(request()->routeIs('cart.index'))
                 <a href="{{ route('cart.index') }}" class="nav-link flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                     <span>Carrello (<span data-cart-count>{{ $cartCount }}</span>)</span>
                 </a>
+                @else
+                <div class="relative" id="cart-dropdown-wrapper">
+                    <a href="{{ route('cart.index') }}" class="nav-link flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span>Carrello (<span data-cart-count>{{ $cartCount }}</span>)</span>
+                    </a>
+
+                    {{-- Dropdown anteprima carrello --}}
+                    <div id="cart-dropdown"
+                         class="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-100 shadow-lg z-50"
+                         style="display:none;">
+                        <div id="cart-dropdown-inner" class="p-4">
+                            <p class="text-xs text-gray-400 text-center py-4">Caricamento...</p>
+                        </div>
+                        <div class="border-t border-gray-100 px-4 py-3 flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Totale</span>
+                            <span id="cart-dropdown-total" class="text-sm font-semibold text-gray-900">—</span>
+                        </div>
+                        <div class="px-4 pb-4">
+                            <a href="{{ route('cart.index') }}" class="btn-primary w-full text-center block">
+                                Vai al carrello
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
             {{-- Hamburger (mobile) --}}
@@ -102,7 +140,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            Carrello (<span data-cart-count>{{ $cartCount }}</span>)
+            <span>Carrello (<span data-cart-count>{{ $cartCount }}</span>)</span>
         </a>
     </div>
 </nav>

@@ -57,7 +57,7 @@ class CartItem extends Model
                 && $this->productVariant->stock_quantity >= $this->quantity;
         }
 
-        if (!$this->product || !$this->product->manage_stock) {
+        if (!$this->product || $this->product->is_service) {
             return true;
         }
 
@@ -70,7 +70,7 @@ class CartItem extends Model
             return $this->productVariant?->stock_quantity ?? 0;
         }
 
-        if (!$this->product || !$this->product->manage_stock) {
+        if (!$this->product || $this->product->is_service) {
             return 999;
         }
 

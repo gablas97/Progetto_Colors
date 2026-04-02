@@ -151,25 +151,32 @@ class ProductResource extends Resource
                                             ->maxLength(255)
                                             ->helperText('EAN-13 o codice personalizzato. Facoltativo.'),
 
+                                        Toggle::make('is_service')
+                                            ->label('È un servizio')
+                                            ->default(false)
+                                            ->live()
+                                            ->helperText('Attiva per servizi (stampa, personalizzazione, ecc.). Disattiva per prodotti fisici.'),
+
                                         Toggle::make('manage_stock')
                                             ->label('Gestione scorte attiva')
                                             ->default(true)
                                             ->live()
-                                            ->helperText('Disattiva per prodotti digitali o con disponibilità illimitata.'),
+                                            ->hidden(fn (Get $get) => $get('is_service'))
+                                            ->helperText('Disattiva se lo stock è gestito a livello di variante.'),
 
                                         TextInput::make('stock_quantity')
                                             ->label('Quantità in magazzino')
                                             ->numeric()
                                             ->default(0)
                                             ->required()
-                                            ->hidden(fn (Get $get) => ! $get('manage_stock')),
+                                            ->hidden(fn (Get $get) => $get('is_service') || ! $get('manage_stock')),
 
                                         TextInput::make('low_stock_threshold')
                                             ->label('Soglia scorta bassa')
                                             ->numeric()
                                             ->default(10)
                                             ->helperText('Riceverai una notifica quando la quantità scende sotto questo valore.')
-                                            ->hidden(fn (Get $get) => ! $get('manage_stock')),
+                                            ->hidden(fn (Get $get) => $get('is_service') || ! $get('manage_stock')),
                                     ]),
                             ]),
 
@@ -352,7 +359,7 @@ class ProductResource extends Resource
                                                     ->numeric()
                                                     ->default(0)
                                                     ->required()
-                                                    ->hidden(fn (Get $get) => ! $get('/manage_stock')),
+                                                    ->hidden(fn (Get $get) => $get('/is_service')),
 
                                                 Forms\Components\FileUpload::make('image')
                                                     ->label('Immagine variante')
@@ -479,14 +486,17 @@ class ProductResource extends Resource
                                         ->label('Giacenza')
                                         ->badge()
                                         ->color(fn (Product $record): string => match (true) {
+                                            $record->is_service => 'info',
                                             ! $record->manage_stock => 'gray',
                                             $record->stock_quantity === 0 => 'danger',
                                             $record->stock_quantity <= $record->low_stock_threshold => 'warning',
                                             default => 'success',
                                         })
-                                        ->formatStateUsing(fn (Product $record): string =>
-                                            $record->manage_stock ? $record->stock_quantity . ' pz' : 'Non tracciato'
-                                        ),
+                                        ->formatStateUsing(fn (Product $record): string => match (true) {
+                                            $record->is_service => 'Servizio',
+                                            ! $record->manage_stock => 'Varianti',
+                                            default => $record->stock_quantity . ' pz',
+                                        }),
 
                                     TextEntry::make('low_stock_threshold')
                                         ->label('Soglia bassa')
@@ -679,16 +689,17 @@ class ProductResource extends Resource
                     ->alignCenter()
                     ->badge()
                     ->color(fn (Product $record): string => match (true) {
+                        $record->is_service => 'info',
                         $record->manage_stock === false => 'gray',
                         $record->stock_quantity === 0 => 'danger',
                         $record->stock_quantity <= $record->low_stock_threshold => 'warning',
                         default => 'success',
                     })
-                    ->formatStateUsing(fn (Product $record): string => 
-                        $record->manage_stock 
-                            ? $record->stock_quantity . ' pz' 
-                            : '—'
-                    )
+                    ->formatStateUsing(fn (Product $record): string => match (true) {
+                        $record->is_service => 'Servizio',
+                        ! $record->manage_stock => 'Varianti',
+                        default => $record->stock_quantity . ' pz',
+                    })
                     ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\IconColumn::make('is_active')

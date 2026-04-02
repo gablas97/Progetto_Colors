@@ -37,6 +37,7 @@ class Product extends Model
         'is_active',
         'is_featured',
         'manage_stock',
+        'is_service',
         'main_image',
         'order',
         'views_count',
@@ -55,6 +56,7 @@ class Product extends Model
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'manage_stock' => 'boolean',
+        'is_service' => 'boolean',
         'order' => 'integer',
         'views_count' => 'integer',
         'sales_count' => 'integer',
@@ -155,21 +157,32 @@ class Product extends Model
     public function scopeInStock($query)
     {
         return $query->where(function ($q) {
-            $q->where('manage_stock', false)
-              ->orWhere('stock_quantity', '>', 0);
+            $q->where('is_service', true)
+              ->orWhere(function ($sub) {
+                  $sub->where('is_service', false)
+                      ->where('manage_stock', false)
+                      ->whereHas('variants', fn ($v) => $v->where('is_active', true)->where('stock_quantity', '>', 0));
+              })
+              ->orWhere(function ($sub) {
+                  $sub->where('is_service', false)
+                      ->where('manage_stock', true)
+                      ->where('stock_quantity', '>', 0);
+              });
         });
     }
 
     public function scopeLowStock($query)
     {
-        return $query->where('manage_stock', true)
+        return $query->where('is_service', false)
+                     ->where('manage_stock', true)
                      ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
                      ->where('stock_quantity', '>', 0);
     }
 
     public function scopeOutOfStock($query)
     {
-        return $query->where('manage_stock', true)
+        return $query->where('is_service', false)
+                     ->where('manage_stock', true)
                      ->where('stock_quantity', '<=', 0);
     }
 
@@ -208,17 +221,16 @@ class Product extends Model
 
     public function isInStock(): bool
     {
+        if ($this->is_service) return true;
         if (!$this->manage_stock) {
-            return true;
+            return $this->variants()->where('is_active', true)->where('stock_quantity', '>', 0)->exists();
         }
         return $this->stock_quantity > 0;
     }
 
     public function isLowStock(): bool
     {
-        if (!$this->manage_stock) {
-            return false;
-        }
+        if ($this->is_service || !$this->manage_stock) return false;
         return $this->stock_quantity > 0 && $this->stock_quantity <= $this->low_stock_threshold;
     }
 
@@ -247,7 +259,7 @@ class Product extends Model
         ?int $referenceId = null,
         ?string $referenceType = null
     ): void {
-        if (!$this->manage_stock) return;
+        if ($this->is_service || !$this->manage_stock) return;
 
         $before = $this->stock_quantity;
         $this->decrement('stock_quantity', $quantity);
@@ -273,7 +285,7 @@ class Product extends Model
         ?int $referenceId = null,
         ?string $referenceType = null
     ): void {
-        if (!$this->manage_stock) return;
+        if ($this->is_service || !$this->manage_stock) return;
 
         $before = $this->stock_quantity;
         $this->increment('stock_quantity', $quantity);

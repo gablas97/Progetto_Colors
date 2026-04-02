@@ -31,6 +31,32 @@ class CartController extends Controller
 
     // -------------------------------------------------------------------------
 
+    public function preview()
+    {
+        $cart = $this->resolveCart();
+        $cart->load(['items.product', 'items.productVariant']);
+
+        $items = $cart->items->map(function ($item) {
+            $product  = $item->product;
+            $price    = $item->productVariant?->price ?? $product->price;
+            return [
+                'name'     => $product->name,
+                'variant'  => $item->productVariant?->name,
+                'quantity' => $item->quantity,
+                'price'    => number_format($price, 2, ',', '.'),
+                'subtotal' => number_format($price * $item->quantity, 2, ',', '.'),
+                'image'    => $product->main_image ? \Storage::url($product->main_image) : null,
+                'url'      => route('products.show', $product->slug),
+            ];
+        });
+
+        $total = number_format($cart->items->sum(function ($i) {
+            return ($i->productVariant?->price ?? $i->product->price) * $i->quantity;
+        }), 2, ',', '.');
+
+        return response()->json(['items' => $items, 'total' => $total]);
+    }
+
     public function index()
     {
         $cart = $this->resolveCart();

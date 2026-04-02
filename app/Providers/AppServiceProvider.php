@@ -10,8 +10,10 @@ use App\Observers\CategoryObserver;
 use App\Observers\OrderObserver;
 use App\Observers\ProductObserver;
 use App\Observers\ReviewObserver;
+use App\Mail\ResetPasswordMail;
+use App\Mail\VerifyEmailMail;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -29,22 +31,19 @@ class AppServiceProvider extends ServiceProvider
         Product::observe(ProductObserver::class);
         Review::observe(ReviewObserver::class);
 
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            return new ResetPasswordMail($notifiable, $token);
+        });
+
         VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
-            return (new MailMessage)
-                ->subject('Verifica il tuo indirizzo email - Colors S.r.l.')
-                ->greeting('Ciao ' . $notifiable->first_name . '!')
-                ->line('Clicca il pulsante qui sotto per verificare il tuo indirizzo email.')
-                ->action('Verifica email', $url)
-                ->line('Il link scadrà tra 60 minuti.')
-                ->line('Se non hai creato un account su Colors S.r.l., ignora questa email.')
-                ->salutation('Il team di Colors S.r.l.');
+            return new VerifyEmailMail($notifiable, $url);
         });
 
         View::composer('*', function ($view) {
-            $wishlistIds = auth()->check()
+            $view->with('wishlistIds', once(fn () => auth()->check()
                 ? auth()->user()->wishlists()->pluck('product_id')->all()
-                : [];
-            $view->with('wishlistIds', $wishlistIds);
+                : []
+            ));
         });
     }
 }

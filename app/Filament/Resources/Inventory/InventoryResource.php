@@ -119,7 +119,7 @@ class InventoryResource extends Resource
             ->query(
                 Product::query()
                     ->where('is_active', true)
-                    ->where('manage_stock', true)
+                    ->where('is_service', false)->where('manage_stock', true)
                     ->with(['brand', 'categories'])
             )
             ->columns([

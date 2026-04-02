@@ -35,6 +35,12 @@
                 <span>Spedizione</span>
                 <span>{{ $order->shipping_cost > 0 ? '€ ' . number_format($order->shipping_cost, 2, ',', '.') : 'Gratuita' }}</span>
             </div>
+            @if($order->discount_amount > 0)
+            <div class="flex justify-between text-green-600">
+                <span>Sconto{{ $order->discount_code ? ' (' . $order->discount_code . ')' : '' }}</span>
+                <span>-€ {{ number_format($order->discount_amount, 2, ',', '.') }}</span>
+            </div>
+            @endif
             <div class="flex justify-between font-semibold text-gray-900 border-t border-gray-200 pt-1">
                 <span>Totale</span>
                 <span>€ {{ number_format($order->total, 2, ',', '.') }}</span>

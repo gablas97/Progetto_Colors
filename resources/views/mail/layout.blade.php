@@ -12,13 +12,13 @@
 
                     {{-- Header --}}
                     <tr>
-                        <td style="background-color:#E8845A; padding:28px 40px;">
-                            <p style="margin:0; font-size:20px; font-weight:700; color:#ffffff; letter-spacing:0.12em; text-transform:uppercase;">
-                                Colors S.r.l.
-                            </p>
-                            <p style="margin:4px 0 0; font-size:11px; color:rgba(255,255,255,0.75); letter-spacing:0.08em; text-transform:uppercase;">
-                                Cartoleria · Stampe · Articoli Regalo
-                            </p>
+                        <td style="background-color:#E8845A; padding:24px 40px;">
+                            <a href="{{ url('/') }}" style="text-decoration:none; display:inline-block;">
+                                <img src="{{ url('images/logo.png') }}"
+                                     alt="Colors S.r.l."
+                                     width="140"
+                                     style="display:block; height:auto; max-height:52px; object-fit:contain;">
+                            </a>
                         </td>
                     </tr>
 

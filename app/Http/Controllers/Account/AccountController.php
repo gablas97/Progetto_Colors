@@ -7,6 +7,7 @@ use App\Mail\AccountDeactivatedMail;
 use App\Models\Address;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
@@ -20,11 +21,16 @@ class AccountController extends Controller
 {
     public function index()
     {
-        $user         = auth()->user();
-        $recentOrders = $user->orders()->latest()->limit(5)->get();
-        $wishlistCount = $user->wishlists()->count();
+        $user           = auth()->user();
+        $recentOrders   = $user->orders()->latest()->limit(5)->get();
+        $ordersCount    = $user->orders()->count();
+        $wishlistCount  = $user->wishlists()->count();
+        $defaultAddress = $user->addresses()->where('is_default', true)->first()
+                        ?? $user->addresses()->first();
 
-        return view('account.index', compact('user', 'recentOrders', 'wishlistCount'));
+        return view('account.index', compact(
+            'user', 'recentOrders', 'ordersCount', 'wishlistCount', 'defaultAddress'
+        ));
     }
 
     public function orders()
@@ -42,7 +48,18 @@ class AccountController extends Controller
         abort_unless($order->user_id === auth()->id(), 403);
         $order->load('items.product', 'items.productVariant');
 
-        return view('account.order-show', compact('order'));
+        $unreviewedProducts = collect();
+        if ($order->status === 'delivered') {
+            $reviewedProductIds = Review::where('user_id', auth()->id())->pluck('product_id');
+            $unreviewedProducts = $order->items
+                ->filter(fn ($item) => $item->product && !$item->product->is_service)
+                ->filter(fn ($item) => !$reviewedProductIds->contains($item->product_id))
+                ->map(fn ($item) => $item->product)
+                ->unique('id')
+                ->values();
+        }
+
+        return view('account.order-show', compact('order', 'unreviewedProducts'));
     }
 
     public function addresses()
@@ -70,7 +87,13 @@ class AccountController extends Controller
             'tax_code'    => ['nullable', 'string', 'max:20'],
         ]);
 
-        auth()->user()->addresses()->create($data);
+        $user = auth()->user();
+
+        if (!$user->addresses()->exists()) {
+            $data['is_default'] = true;
+        }
+
+        $user->addresses()->create($data);
 
         return back()->with('success', 'Indirizzo aggiunto.');
     }

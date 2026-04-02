@@ -1,36 +1,78 @@
 @extends('layouts.app')
+
 @section('title', 'Il mio account - Colors S.r.l.')
 
 @section('content')
+
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-    <h1 class="text-2xl font-semibold text-gray-900 mb-2">Ciao, {{ $user->first_name }}!</h1>
-    <p class="text-sm text-gray-500 mb-10">Benvenuto nella tua area personale.</p>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-        @foreach([
-            ['I miei ordini',  route('account.orders'),    'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
-            ['Indirizzi',      route('account.addresses'), 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'],
-            ['Wishlist',       route('account.wishlist'),  'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'],
-            ['Profilo',        route('account.profile'),   'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
-        ] as [$label, $url, $icon])
-        <a href="{{ $url }}" class="group flex flex-col items-center gap-3 border border-gray-100 p-6 hover:border-primary hover:bg-primary-50 transition-all">
-            <svg class="w-7 h-7 text-gray-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $icon }}"/>
-            </svg>
-            <span class="text-xs font-semibold tracking-wider uppercase text-gray-600 group-hover:text-primary transition-colors">{{ $label }}</span>
+    <div class="flex items-start justify-between mb-10">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-900 mb-1">Ciao, {{ $user->first_name }}!</h1>
+            <p class="text-sm text-gray-500">Benvenuto nella tua area personale!</p>
+        </div>
+        <a href="{{ route('account.profile') }}"
+           class="text-xs font-semibold tracking-wider uppercase text-gray-400 hover:text-primary transition-colors border border-gray-300 hover:border-primary px-4 py-2 flex-shrink-0">
+            Il mio profilo
         </a>
-        @endforeach
+    </div>
+
+    {{-- Stat cards --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+        <a href="{{ route('account.orders') }}"
+           class="group border border-gray-300 p-6 hover:border-primary hover:bg-primary-50 transition-all">
+            <p class="text-3xl font-semibold text-gray-900 group-hover:text-primary transition-colors mb-1">{{ $ordersCount }}</p>
+            <p class="text-xs font-semibold tracking-wider uppercase text-gray-400 group-hover:text-primary transition-colors">Ordini</p>
+        </a>
+        <a href="{{ route('account.wishlist') }}"
+           class="group border border-gray-300 p-6 hover:border-primary hover:bg-primary-50 transition-all">
+            <p class="text-3xl font-semibold text-gray-900 group-hover:text-primary transition-colors mb-1">{{ $wishlistCount }}</p>
+            <p class="text-xs font-semibold tracking-wider uppercase text-gray-400 group-hover:text-primary transition-colors">Wishlist</p>
+        </a>
+    </div>
+
+    {{-- Indirizzo predefinito --}}
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold tracking-wider uppercase text-gray-500">Indirizzo predefinito</h2>
+            <a href="{{ route('account.addresses') }}" class="text-xs text-primary uppercase font-semibold hover:text-primary-dark transition-colors">Gestisci</a>
+        </div>
+        <div class="border border-gray-300 p-5">
+            @if($defaultAddress)
+                <p class="text-sm font-medium text-gray-800 mb-1">{{ $defaultAddress->first_name }} {{ $defaultAddress->last_name }}</p>
+                <p class="text-sm text-gray-500">{{ $defaultAddress->address }}</p>
+                <p class="text-sm text-gray-500">{{ $defaultAddress->postal_code }} {{ $defaultAddress->city }} ({{ $defaultAddress->province }})</p>
+                @if($defaultAddress->phone)
+                    <p class="text-xs text-gray-400 mt-1">{{ $defaultAddress->phone }}</p>
+                @endif
+            @else
+                <div class="flex items-center gap-4">
+                    <svg class="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-0.5">Nessun indirizzo salvato.</p>
+                        <a href="{{ route('account.addresses') }}" class="text-xs font-semibold tracking-wider uppercase text-primary hover:text-primary-dark transition-colors">
+                            Aggiungi indirizzo
+                        </a>
+                    </div>
+                </div>
+            @endif
+        </div>
     </div>
 
     {{-- Ultimi ordini --}}
-    @if($recentOrders->isNotEmpty())
     <div>
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-sm font-semibold tracking-wider uppercase text-gray-500">Ultimi ordini</h2>
-            <a href="{{ route('account.orders') }}" class="text-xs text-primary hover:text-primary-dark transition-colors">Vedi tutti →</a>
+            @if($recentOrders->isNotEmpty())
+                <a href="{{ route('account.orders') }}" class="text-xs text-primary uppercase font-semibold hover:text-primary-dark transition-colors">Vedi tutti</a>
+            @endif
         </div>
-        <div class="divide-y divide-gray-100 border border-gray-100">
+
+        @if($recentOrders->isNotEmpty())
+        <div class="divide-y divide-gray-100 border border-gray-300 p-5">
             @foreach($recentOrders as $order)
             <a href="{{ route('account.orders.show', $order->id) }}"
                class="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
@@ -60,8 +102,20 @@
             </a>
             @endforeach
         </div>
+        @else
+        <div class="border border-gray-300 p-5 flex items-center gap-4">
+            <svg class="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-.375c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v.375c0 .621.504 1.125 1.125 1.125Z"/>
+            </svg>
+            <div>
+                <p class="text-sm text-gray-500 mb-0.5">Nessun ordine effettuato.</p>
+                <a href="{{ route('products.index') }}" class="text-xs font-semibold tracking-wider uppercase text-primary hover:text-primary-dark transition-colors">
+                    Scopri i prodotti
+                </a>
+            </div>
+        </div>
+        @endif
     </div>
-    @endif
 
 </div>
 @endsection

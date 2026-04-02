@@ -1,8 +1,10 @@
 @extends('layouts.app')
+
 @section('title', 'Profilo - Colors S.r.l.')
 
 @section('content')
-<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ route('account.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -49,9 +51,7 @@
             <span class="text-xs text-gray-600">Iscritto alla newsletter</span>
         </label>
 
-        <hr class="border-gray-100">
-
-        <p class="text-xs font-semibold tracking-wider uppercase text-gray-400">Cambia password <span class="font-normal text-gray-400 normal-case tracking-normal">(lascia vuoto per non modificarla)</span></p>
+        <hr class="border-gray-300">
 
         <div>
             <label class="form-label">Password attuale</label>
@@ -61,7 +61,7 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="form-label">Nuova password</label>
+                <label class="form-label">Nuova password <span class="font-normal text-gray-400 normal-case tracking-normal">(lascia vuoto per non modificarla)</span></label>
                 <input type="password" name="new_password" class="input-field @error('new_password') border-red-400 @enderror">
                 @error('new_password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
@@ -75,7 +75,7 @@
     </form>
 
     {{-- Zona pericolo: eliminazione account --}}
-    <div class="mt-12 border border-red-100 p-6">
+    <div class="mt-12 border border-red-300 p-6">
         <h2 class="text-sm font-semibold tracking-wider uppercase text-red-400 mb-2">Elimina account</h2>
         <p class="text-sm text-gray-500 mb-5">
             Eliminando l'account non potrai più accedere alla tua area personale. I dati degli ordini precedenti verranno conservati.
@@ -88,13 +88,13 @@
         </button>
 
         <form id="delete-account-form" method="POST" action="{{ route('account.destroy') }}"
-              class="hidden mt-6 space-y-4">
+            class="hidden mt-6 space-y-4">
             @csrf @method('DELETE')
             <div>
                 <label class="form-label">Conferma con la tua password</label>
                 <input type="password" name="password" required
-                       placeholder="La tua password attuale"
-                       class="input-field @error('password', 'deleteAccount') border-red-400 @enderror">
+                    placeholder="La tua password attuale"
+                    class="input-field @error('password', 'deleteAccount') border-red-400 @enderror">
                 @error('password', 'deleteAccount')
                     <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                 @enderror

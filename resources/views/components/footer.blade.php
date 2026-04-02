@@ -6,15 +6,8 @@
 
                 {{-- Brand --}}
                 <div>
-                    <a href="{{ route('home') }}" class="flex items-center gap-2 mb-4">
-                        <svg width="46" height="34" viewBox="0 0 46 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <line x1="23" y1="30" x2="3"  y2="4"  stroke="#E8845A" stroke-width="2.5" stroke-linecap="round"/>
-                            <line x1="23" y1="30" x2="11" y2="2"  stroke="#F5C842" stroke-width="2.5" stroke-linecap="round"/>
-                            <line x1="23" y1="30" x2="23" y2="1"  stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"/>
-                            <line x1="23" y1="30" x2="35" y2="2"  stroke="#2196F3" stroke-width="2.5" stroke-linecap="round"/>
-                            <line x1="23" y1="30" x2="43" y2="4"  stroke="#9C27B0" stroke-width="2.5" stroke-linecap="round"/>
-                        </svg>
-                        <span class="font-bold tracking-widest text-white text-sm">COLORS</span>
+                    <a href="{{ route('home') }}" class="flex items-center">
+                        <img src="{{ asset('images/logo.png') }}" alt="Logo Colors S.r.l." class="h-30 w-auto">
                     </a>
                     <p class="text-gray-400 text-sm leading-relaxed">
                         La tua cartoleria di fiducia a Taranto. Prodotti di qualità, stampe, grafica personalizzata e articoli regalo.

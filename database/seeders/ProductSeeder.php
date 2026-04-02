@@ -40,6 +40,7 @@ class ProductSeeder extends Seeder
             'is_active' => true,
             'is_featured' => true,
             'manage_stock' => false, // Stock gestito dalle varianti
+            'is_service' => false,
             'order' => 1,
         ]);
 
@@ -115,7 +116,8 @@ class ProductSeeder extends Seeder
             'vat_rate' => 22.00,
             'is_active' => true,
             'is_featured' => true,
-            'manage_stock' => false,
+            'manage_stock' => false, // Stock gestito dalle varianti
+            'is_service' => false,
         ]);
 
         $penna1->categories()->attach([$penne->id, $penneBiro->id, $scuola->id]);

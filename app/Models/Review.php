@@ -20,13 +20,15 @@ class Review extends Model
         'is_verified_purchase',
         'is_approved',
         'helpful_count',
+        'reward_sent',
     ];
 
     protected $casts = [
-        'rating' => 'integer',
+        'rating'               => 'integer',
         'is_verified_purchase' => 'boolean',
-        'is_approved' => 'boolean',
-        'helpful_count' => 'integer',
+        'is_approved'          => 'boolean',
+        'helpful_count'        => 'integer',
+        'reward_sent'          => 'boolean',
     ];
 
     // Relazioni

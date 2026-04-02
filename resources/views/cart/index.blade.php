@@ -4,7 +4,7 @@
 
 @section('content')
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
     <h1 class="text-2xl font-semibold text-gray-900 mb-8">Il tuo carrello</h1>
 
@@ -59,18 +59,18 @@
                     <div class="flex items-center gap-2">
                         <form method="POST" action="{{ route('cart.update', $item->id) }}">
                             @csrf @method('PATCH')
-                            <div class="flex items-center border border-gray-200">
+                            <div class="flex items-center border border-gray-300">
                                 <button type="submit" name="quantity" value="{{ max(1, $item->quantity - 1) }}"
-                                        class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm">−</button>
+                                        class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm cursor-pointer">−</button>
                                 <span class="px-3 text-sm text-gray-700">{{ $item->quantity }}</span>
                                 <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}"
-                                        class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm">+</button>
+                                        class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm cursor-pointer">+</button>
                             </div>
                         </form>
 
                         <form method="POST" action="{{ route('cart.remove', $item->id) }}">
                             @csrf @method('DELETE')
-                            <button type="submit" class="p-1.5 text-gray-300 hover:text-red-400 transition-colors" aria-label="Rimuovi">
+                            <button type="submit" class="p-1.5 text-gray-300 hover:text-red-400 transition-colors cursor-pointer" aria-label="Rimuovi">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
@@ -128,7 +128,7 @@
                     @endguest
 
                     <a href="{{ route('products.index') }}" class="block text-center text-xs text-gray-400 hover:text-gray-600 transition-colors mt-4">
-                        ← Continua lo shopping
+                        Continua lo shopping
                     </a>
                 </div>
             </div>

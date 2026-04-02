@@ -47,12 +47,12 @@ class StatsOverview extends StatsOverviewWidget
             ? (($ordersThisMonth - $ordersLastMonth) / $ordersLastMonth) * 100 
             : 0;
 
-        $lowStockProducts = Product::where('manage_stock', true)
+        $lowStockProducts = Product::where('is_service', false)->where('manage_stock', true)
             ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
             ->where('stock_quantity', '>', 0)
             ->count();
 
-        $outOfStockProducts = Product::where('manage_stock', true)
+        $outOfStockProducts = Product::where('is_service', false)->where('manage_stock', true)
             ->where('stock_quantity', 0)
             ->count();
 

@@ -10,8 +10,6 @@ class Dashboard extends \Filament\Pages\Dashboard
 
     protected static ?string $navigationLabel = 'Dashboard';
 
-    protected static ?string $title = 'Dashboard';
-
     protected static ?int $navigationSort = 1;
 
     public function getHeaderWidgets(): array

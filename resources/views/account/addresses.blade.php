@@ -1,8 +1,11 @@
 @extends('layouts.app')
+
 @section('title', 'Indirizzi - Colors S.r.l.')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
 
     <div class="flex items-center gap-4 mb-8">
         <a href="{{ route('account.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -21,7 +24,7 @@
     @if($addresses->isNotEmpty())
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
         @foreach($addresses as $address)
-        <div class="border border-gray-200 p-5 relative {{ $address->is_default ? 'border-primary' : '' }}">
+        <div class="border border-gray-300 p-5 relative {{ $address->is_default ? 'border-primary' : '' }}">
             @if($address->is_default)
                 <span class="absolute top-3 right-3 text-[10px] bg-primary text-white px-2 py-0.5 font-semibold tracking-wider">Predefinito</span>
             @endif
@@ -36,7 +39,7 @@
 
             <form method="POST" action="{{ route('account.addresses.destroy', $address->id) }}" class="mt-4">
                 @csrf @method('DELETE')
-                <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">Elimina</button>
+                <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors cursor-pointer">Elimina</button>
             </form>
         </div>
         @endforeach
@@ -44,9 +47,9 @@
     @endif
 
     {{-- Form nuovo indirizzo --}}
-    <details class="border border-gray-200" {{ $addresses->isEmpty() ? 'open' : '' }}>
+    <details class="border border-gray-300" {{ $addresses->isEmpty() ? 'open' : '' }}>
         <summary class="px-5 py-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50">
-            + Aggiungi nuovo indirizzo
+            Aggiungi nuovo indirizzo
         </summary>
         <form method="POST" action="{{ route('account.addresses.store') }}" class="p-5 border-t border-gray-100 space-y-4">
             @csrf
@@ -106,6 +109,5 @@
             <button type="submit" class="btn-primary">Salva indirizzo</button>
         </form>
     </details>
-
 </div>
 @endsection

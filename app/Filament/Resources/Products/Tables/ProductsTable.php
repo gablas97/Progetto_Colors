@@ -52,6 +52,8 @@ class ProductsTable
                     ->boolean(),
                 IconColumn::make('is_featured')
                     ->boolean(),
+                IconColumn::make('is_service')
+                    ->boolean(),
                 IconColumn::make('manage_stock')
                     ->boolean(),
                 ImageColumn::make('main_image')

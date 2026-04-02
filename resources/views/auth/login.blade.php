@@ -49,6 +49,9 @@
                     <input type="checkbox" name="remember" class="accent-primary">
                     <span class="text-xs text-gray-600">Ricordami</span>
                 </label>
+                <a href="{{ route('password.request') }}" class="text-xs text-gray-400 hover:text-primary transition-colors">
+                    Password dimenticata?
+                </a>
             </div>
 
             <button type="submit" class="btn-primary w-full text-center block">

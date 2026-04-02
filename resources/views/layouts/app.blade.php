@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <link rel="icon" href="{{ asset('images/logo.png') }}" type="image/png">
+
     <title>@yield('title', config('app.name', 'Colors S.r.l.'))</title>
     <meta name="description" content="@yield('description', 'Colors S.r.l. - Cartoleria, stampe, grafica personalizzata e articoli regalo a Taranto.')">
 

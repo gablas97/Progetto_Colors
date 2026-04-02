@@ -57,7 +57,7 @@
     <div class="mt-1.5 flex items-start justify-between gap-2">
         <div class="min-w-0">
             <a href="{{ route('products.show', $product->slug) }}"
-               class="block text-sm font-medium text-gray-800 hover:text-primary transition-colors leading-snug line-clamp-2">
+               class="block text-sm font-medium text-gray-800 {{ request()->routeIs('home') ? 'hover:text-gray-950' : 'hover:text-primary' }} transition-colors leading-snug line-clamp-2">
                 {{ $product->name }}
             </a>
             <div class="flex items-baseline gap-2 mt-1">

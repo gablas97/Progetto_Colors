@@ -48,7 +48,7 @@ class StockAdjustmentResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('product_id')
                         ->label('Prodotto')
-                        ->options(Product::where('is_active', true)->where('manage_stock', true)->pluck('name', 'id'))
+                        ->options(Product::where('is_active', true)->where('is_service', false)->where('manage_stock', true)->pluck('name', 'id'))
                         ->searchable()
                         ->preload()
                         ->required()

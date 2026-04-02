@@ -9,7 +9,7 @@ class ServiceController extends Controller
     public function index()
     {
         $services = Product::active()
-            ->where('manage_stock', false)
+            ->where('is_service', true)
             ->with(['images' => fn ($q) => $q->orderBy('order')])
             ->orderBy('order')
             ->get();
@@ -20,7 +20,7 @@ class ServiceController extends Controller
     public function show(string $slug)
     {
         $service = Product::active()
-            ->where('manage_stock', false)
+            ->where('is_service', true)
             ->where('slug', $slug)
             ->with(['images' => fn ($q) => $q->orderBy('order')])
             ->firstOrFail();

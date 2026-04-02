@@ -57,6 +57,8 @@ class ProductForm
                     ->required(),
                 Toggle::make('is_featured')
                     ->required(),
+                Toggle::make('is_service')
+                    ->required(),
                 Toggle::make('manage_stock')
                     ->required(),
                 FileUpload::make('main_image')

@@ -23,7 +23,7 @@ class LowStockAlert extends TableWidget
         return $table
             ->heading('⚠️ Alert Stock Basso')
             ->query(fn (): Builder => Product::query()
-                ->where('manage_stock', true)
+                ->where('is_service', false)->where('manage_stock', true)
                 ->where(function ($query) {
                     $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
                         ->orWhere('stock_quantity', 0);
