@@ -24,9 +24,14 @@
     @if($addresses->isNotEmpty())
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
         @foreach($addresses as $address)
-        <div class="border border-gray-300 p-5 relative {{ $address->is_default ? 'border-primary' : '' }}">
+        <div class="border border-gray-300 p-5 relative flex flex-col {{ $address->is_default ? 'border-primary' : '' }}">
             @if($address->is_default)
                 <span class="absolute top-3 right-3 text-[10px] bg-primary text-white px-2 py-0.5 font-semibold tracking-wider">Predefinito</span>
+            @else
+                <form method="POST" action="{{ route('account.addresses.setDefault', $address->id) }}" class="absolute top-3 right-3">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="text-xs text-primary uppercase font-semibold hover:text-primary-dark transition-colors cursor-pointer">Imposta predefinito</button>
+                </form>
             @endif
             <p class="text-xs font-semibold tracking-wider uppercase text-gray-400 mb-2">
                 {{ match($address->type) { 'shipping' => 'Spedizione', 'billing' => 'Fatturazione', default => 'Entrambi' } }}
@@ -35,12 +40,14 @@
             @if($address->company) <p class="text-xs text-gray-500">{{ $address->company }}</p> @endif
             <p class="text-sm text-gray-600 mt-1">{{ $address->address }}</p>
             <p class="text-sm text-gray-600">{{ $address->postal_code }} {{ $address->city }} ({{ $address->province }})</p>
-            @if($address->phone) <p class="text-xs text-gray-400 mt-1">{{ $address->phone }}</p> @endif
+            @if($address->phone) <p class="text-xs text-gray-400 mt-1">+39 {{ $address->phone }}</p> @endif
 
-            <form method="POST" action="{{ route('account.addresses.destroy', $address->id) }}" class="mt-4">
-                @csrf @method('DELETE')
-                <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors cursor-pointer">Elimina</button>
-            </form>
+            <div class="mt-auto pt-4">
+                <form method="POST" action="{{ route('account.addresses.destroy', $address->id) }}">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors cursor-pointer">Elimina</button>
+                </form>
+            </div>
         </div>
         @endforeach
     </div>
@@ -97,7 +104,10 @@
                 </div>
                 <div>
                     <label class="form-label">Telefono</label>
-                    <input type="tel" name="phone" value="{{ old('phone') }}" class="input-field">
+                    <div class="flex">
+                        <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+39</span>
+                        <input type="tel" name="phone" value="{{ old('phone') }}" class="input-field flex-1 min-w-0">
+                    </div>
                 </div>
             </div>
 

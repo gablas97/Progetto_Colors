@@ -14,6 +14,7 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
+        "satispay/gbusiness-api-php-sdk": "^1.4",
         "srmklive/paypal": "^3.0",
         "stripe/stripe-php": "^20.0"
     },

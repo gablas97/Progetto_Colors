@@ -1,3 +1,10 @@
+@layer base {
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+}
+
 @layer components {
   /* Buttons */
   .btn-primary {
@@ -159,6 +166,7 @@
     margin: 0 2rem;
   }
 
+
   /* primary-600 / primary-900 alias (usati nella pagina prodotto) */
   .border-primary-600 { border-color: var(--color-primary); }
   .text-primary-600   { color: var(--color-primary); }
@@ -265,4 +273,26 @@
   /* Incentivo sconto recensione */
   .border-primary { border-color: var(--color-primary); }
   .text-primary   { color: var(--color-primary); }
+}
+
+@layer utilities {
+  .variant-swatch {
+    border-radius: 9999px;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px #d1d5db;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .variant-swatch:hover:not(:disabled) {
+    box-shadow: 0 0 0 2px var(--color-primary);
+    transform: scale(1.15);
+  }
+  .variant-swatch.selected {
+    box-shadow: 0 0 0 2px var(--color-primary);
+    transform: scale(1.15);
+  }
+  .variant-swatch:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
 }

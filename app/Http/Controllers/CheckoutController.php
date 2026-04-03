@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Address;
 use App\Models\Cart;
 use App\Models\Discount;
 use App\Models\Order;
@@ -34,17 +35,22 @@ class CheckoutController extends Controller
         $discount     = $this->resolveSessionDiscount($subtotal, $shippingCost);
         $total        = $subtotal + $shippingCost - $discount['amount'];
 
-        $defaultAddress = null;
+        $defaultAddress   = null;
+        $billingAddresses = collect();
         if (auth()->check()) {
-            $defaultAddress = auth()->user()
-                ->addresses()
+            $user = auth()->user();
+            $defaultAddress = $user->addresses()
                 ->where('type', '!=', 'billing')
                 ->where('is_default', true)
                 ->first()
-                ?? auth()->user()->addresses()->where('type', '!=', 'billing')->first();
+                ?? $user->addresses()->where('type', '!=', 'billing')->first();
+
+            $billingAddresses = $user->addresses()
+                ->whereIn('type', ['billing', 'both'])
+                ->get();
         }
 
-        return view('checkout.index', compact('cart', 'subtotal', 'shippingCost', 'total', 'defaultAddress', 'discount'));
+        return view('checkout.index', compact('cart', 'subtotal', 'shippingCost', 'total', 'defaultAddress', 'discount', 'billingAddresses'));
     }
 
     // =========================================================================
@@ -130,14 +136,43 @@ class CheckoutController extends Controller
             'shipping_postal_code' => ['required', 'string', 'max:10'],
             'shipping_phone'       => ['nullable', 'string', 'max:30'],
             'notes'                => ['nullable', 'string', 'max:1000'],
-            'payment_method'       => ['required', 'in:stripe,paypal'],
+            'payment_method'       => ['required', 'in:stripe,paypal,satispay'],
         ];
 
         if (!auth()->check()) {
             $rules['guest_email'] = ['required', 'email', 'max:255'];
         }
 
+        $billingDifferent  = $request->boolean('billing_different');
+        $usingSavedBilling = $billingDifferent
+            && $request->filled('billing_saved_id')
+            && $request->input('billing_saved_id') !== 'new';
+
+        if ($billingDifferent && !$usingSavedBilling) {
+            $rules['billing_first_name']  = ['required', 'string', 'max:100'];
+            $rules['billing_last_name']   = ['required', 'string', 'max:100'];
+            $rules['billing_company']     = ['nullable', 'string', 'max:150'];
+            $rules['billing_vat_number']  = ['nullable', 'string', 'max:30'];
+            $rules['billing_tax_code']    = ['nullable', 'string', 'max:20'];
+            $rules['billing_address']     = ['required', 'string', 'max:255'];
+            $rules['billing_city']        = ['required', 'string', 'max:100'];
+            $rules['billing_province']    = ['required', 'string', 'size:2'];
+            $rules['billing_postal_code'] = ['required', 'string', 'max:10'];
+            $rules['billing_sdi_code']    = ['nullable', 'string', 'max:7'];
+            $rules['billing_pec']         = ['nullable', 'email', 'max:255'];
+        }
+
         $data = $request->validate($rules);
+
+        // Risolvi indirizzo di fatturazione da salvato se necessario
+        $savedBillingAddr = null;
+        if ($usingSavedBilling) {
+            $savedBillingAddr = Address::where('id', $request->input('billing_saved_id'))
+                ->where('user_id', auth()->id())
+                ->whereIn('type', ['billing', 'both'])
+                ->first();
+            abort_unless($savedBillingAddr, 422);
+        }
 
         $subtotal     = $cart->subtotal;
         $shippingCost = $subtotal >= self::FREE_SHIPPING_MIN ? 0 : self::SHIPPING_COST;
@@ -146,7 +181,7 @@ class CheckoutController extends Controller
 
         $orderId = null;
 
-        DB::transaction(function () use ($data, $cart, $subtotal, $shippingCost, $discount, $total, &$orderId) {
+        DB::transaction(function () use ($data, $cart, $subtotal, $shippingCost, $discount, $total, $billingDifferent, $savedBillingAddr, &$orderId) {
             $order = Order::create([
                 'user_id'              => auth()->id(),
                 'guest_email'          => auth()->check() ? null : $data['guest_email'],
@@ -159,7 +194,19 @@ class CheckoutController extends Controller
                 'shipping_postal_code' => $data['shipping_postal_code'],
                 'shipping_country'     => 'IT',
                 'shipping_phone'       => $data['shipping_phone'] ?? null,
-                'billing_same_as_shipping' => true,
+                'billing_same_as_shipping' => !$billingDifferent,
+                'billing_first_name'       => $billingDifferent ? ($savedBillingAddr?->first_name  ?? $data['billing_first_name'])  : null,
+                'billing_last_name'        => $billingDifferent ? ($savedBillingAddr?->last_name   ?? $data['billing_last_name'])   : null,
+                'billing_company'          => $billingDifferent ? ($savedBillingAddr?->company     ?? ($data['billing_company'] ?? null))    : null,
+                'billing_vat_number'       => $billingDifferent ? ($savedBillingAddr?->vat_number  ?? ($data['billing_vat_number'] ?? null))  : null,
+                'billing_tax_code'         => $billingDifferent ? ($savedBillingAddr?->tax_code    ?? ($data['billing_tax_code'] ?? null))    : null,
+                'billing_address'          => $billingDifferent ? ($savedBillingAddr?->address     ?? $data['billing_address'])    : null,
+                'billing_city'             => $billingDifferent ? ($savedBillingAddr?->city        ?? $data['billing_city'])       : null,
+                'billing_province'         => $billingDifferent ? strtoupper($savedBillingAddr?->province ?? $data['billing_province']) : null,
+                'billing_postal_code'      => $billingDifferent ? ($savedBillingAddr?->postal_code ?? $data['billing_postal_code']) : null,
+                'billing_country'          => $billingDifferent ? 'IT' : null,
+                'billing_sdi_code'         => $billingDifferent ? ($savedBillingAddr?->sdi_code    ?? ($data['billing_sdi_code'] ?? null))    : null,
+                'billing_pec'              => $billingDifferent ? ($savedBillingAddr?->pec         ?? ($data['billing_pec'] ?? null))         : null,
                 'subtotal'             => $subtotal,
                 'discount_amount'      => $discount['amount'],
                 'discount_code'        => $discount['code'],
@@ -205,9 +252,11 @@ class CheckoutController extends Controller
 
         $order = Order::findOrFail($orderId);
 
-        return $data['payment_method'] === 'stripe'
-            ? $this->redirectToStripe($order)
-            : $this->redirectToPayPal($order);
+        return match($data['payment_method']) {
+            'stripe'   => $this->redirectToStripe($order),
+            'satispay' => $this->redirectToSatispay($order),
+            default    => $this->redirectToPayPal($order),
+        };
     }
 
     // =========================================================================
@@ -364,6 +413,72 @@ class CheckoutController extends Controller
         }
 
         session()->forget('paypal_order_' . $token);
+        session(['last_order_id' => $order->id]);
+
+        return redirect()->route('checkout.success');
+    }
+
+    // =========================================================================
+    // Satispay
+    // =========================================================================
+
+    private function redirectToSatispay(Order $order)
+    {
+        $config = config('services.satispay');
+
+        \SatispayGBusiness\Api::setSandbox((bool) $config['sandbox']);
+        \SatispayGBusiness\Api::setPublicKey($config['public_key']);
+        \SatispayGBusiness\Api::setPrivateKey($config['private_key']);
+        \SatispayGBusiness\Api::setKeyId($config['key_id']);
+
+        $payment = \SatispayGBusiness\Payment::create([
+            'flow'             => 'MATCH_USER',
+            'amount_unit'      => (int) round($order->total * 100),
+            'currency'         => 'EUR',
+            'redirect_url'     => route('checkout.satispay.success') . '?order_id=' . $order->id,
+            'callback_url'     => route('checkout.satispay.success') . '?order_id=' . $order->id,
+            'expiration_date'  => now()->addMinutes(30)->toIso8601String(),
+            'metadata'         => ['order_id' => $order->id],
+        ]);
+
+        session(['satispay_payment_' . $payment->id => $order->id]);
+
+        return redirect($payment->redirect_url);
+    }
+
+    public function satispaySuccess(Request $request)
+    {
+        $paymentId = $request->query('payment_id');
+        $orderId   = $request->query('order_id')
+            ?? session('satispay_payment_' . $paymentId);
+
+        if (!$orderId) return redirect()->route('home');
+
+        $order = Order::findOrFail($orderId);
+
+        if (!$order->isPaid() && $paymentId) {
+            $config = config('services.satispay');
+            \SatispayGBusiness\Api::setSandbox((bool) $config['sandbox']);
+            \SatispayGBusiness\Api::setPublicKey($config['public_key']);
+            \SatispayGBusiness\Api::setPrivateKey($config['private_key']);
+            \SatispayGBusiness\Api::setKeyId($config['key_id']);
+
+            $payment = \SatispayGBusiness\Payment::get($paymentId);
+
+            if (($payment->status ?? '') === 'ACCEPTED') {
+                $order->markAsPaid($paymentId);
+                $order->update(['status' => 'processing']);
+            } else {
+                return redirect()->route('checkout.index')
+                    ->with('error', 'Pagamento Satispay non completato. Riprova.');
+            }
+        }
+
+        if ($order->user_id && $order->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        session()->forget('satispay_payment_' . $paymentId);
         session(['last_order_id' => $order->id]);
 
         return redirect()->route('checkout.success');

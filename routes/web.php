@@ -34,6 +34,7 @@ Route::get('/carrello/anteprima', [CartController::class, 'preview'])->name('car
 Route::post('/carrello', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/carrello/{item}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/carrello/{item}', [CartController::class, 'remove'])->name('cart.remove');
+Route::delete('/carrello', [CartController::class, 'clear'])->name('cart.clear');
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/checkout/sconto/rimuovi', [CheckoutController::class, 'removeDiscount'])->name('checkout.discount.remove');
     Route::get('/checkout/stripe/successo', [CheckoutController::class, 'stripeSuccess'])->name('checkout.stripe.success');
     Route::get('/checkout/paypal/successo', [CheckoutController::class, 'paypalSuccess'])->name('checkout.paypal.success');
+    Route::get('/checkout/satispay/successo', [CheckoutController::class, 'satispaySuccess'])->name('checkout.satispay.success');
     Route::get('/checkout/successo', [CheckoutController::class, 'success'])->name('checkout.success');
 });
 
@@ -105,6 +107,7 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     Route::get('/indirizzi', [AccountController::class, 'addresses'])->name('addresses');
     Route::post('/indirizzi', [AccountController::class, 'storeAddress'])->name('addresses.store');
     Route::delete('/indirizzi/{address}', [AccountController::class, 'destroyAddress'])->name('addresses.destroy');
+    Route::patch('/indirizzi/{address}/default', [AccountController::class, 'setDefaultAddress'])->name('addresses.setDefault');
     Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
     Route::post('/wishlist/{product}', [AccountController::class, 'toggleWishlist'])->name('wishlist.toggle');
     Route::get('/profilo', [AccountController::class, 'editProfile'])->name('profile');

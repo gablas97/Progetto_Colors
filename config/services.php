@@ -45,4 +45,11 @@ return [
         'place_id' => env('GOOGLE_PLACE_ID', ''),
     ],
 
+    'satispay' => [
+        'sandbox'     => env('SATISPAY_SANDBOX', true),
+        'key_id'      => env('SATISPAY_KEY_ID'),
+        'public_key'  => env('SATISPAY_PUBLIC_KEY'),
+        'private_key' => env('SATISPAY_PRIVATE_KEY'),
+    ],
+
 ];

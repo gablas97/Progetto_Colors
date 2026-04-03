@@ -4,7 +4,14 @@
 @section('content')
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-    <h1 class="text-2xl font-semibold text-gray-900 mb-8">Checkout</h1>
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ route('cart.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <h1 class="text-2xl font-semibold text-gray-900">Checkout</h1>
+    </div>
 
     <form id="checkout-form" method="POST" action="{{ route('checkout.store') }}"
           data-discount-apply-url="{{ route('checkout.discount.apply') }}"
@@ -100,6 +107,117 @@
                 </div>
             </div>
 
+            {{-- Indirizzo di fatturazione --}}
+            <div class="border border-gray-300 p-6">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" id="billing-different-checkbox" name="billing_different" value="1"
+                           class="accent-primary w-4 h-4"
+                           {{ old('billing_different') ? 'checked' : '' }}>
+                    <span class="text-sm font-medium text-gray-700">Usa un indirizzo di fatturazione diverso</span>
+                </label>
+
+                <div id="billing-section" class="{{ old('billing_different') ? '' : 'hidden' }} mt-5">
+
+                    @auth
+                    @if($billingAddresses->isNotEmpty())
+                    <div class="mb-4" id="billing-saved-addresses">
+                        <p class="text-xs font-semibold tracking-wider uppercase text-gray-400 mb-3">Indirizzi salvati</p>
+                        <div class="space-y-2">
+                            @foreach($billingAddresses as $loop_ba)
+                            <label class="flex items-start gap-3 border border-gray-200 p-3 cursor-pointer hover:border-gray-400 transition-colors">
+                                <input type="radio" name="billing_saved_id" value="{{ $loop_ba->id }}"
+                                       class="mt-0.5 accent-primary billing-saved-radio cursor-pointer"
+                                       {{ old('billing_saved_id', $billingAddresses->first()->id) == $loop_ba->id ? 'checked' : '' }}>
+                                <span class="text-sm text-gray-700">
+                                    <span class="font-medium">{{ $loop_ba->first_name }} {{ $loop_ba->last_name }}</span>
+                                    @if($loop_ba->company) <span class="text-gray-500"> — {{ $loop_ba->company }}</span> @endif
+                                    <br><span class="text-gray-500">{{ $loop_ba->address }}, {{ $loop_ba->postal_code }} {{ $loop_ba->city }} ({{ $loop_ba->province }})</span>
+                                </span>
+                            </label>
+                            @endforeach
+                            <label class="flex items-center gap-3 border border-gray-200 p-3 cursor-pointer hover:border-gray-400 transition-colors">
+                                <input type="radio" name="billing_saved_id" value="new"
+                                       class="accent-primary billing-saved-radio cursor-pointer"
+                                       {{ old('billing_saved_id') === 'new' ? 'checked' : '' }}>
+                                <span class="text-sm font-medium text-gray-700">Inserisci nuovo indirizzo</span>
+                            </label>
+                        </div>
+                    </div>
+                    @endif
+                    @endauth
+
+                    <div id="billing-form-fields" class="{{ auth()->check() && $billingAddresses->isNotEmpty() && old('billing_saved_id') !== 'new' ? 'hidden' : '' }}">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">Nome *</label>
+                                <input type="text" name="billing_first_name" value="{{ old('billing_first_name') }}"
+                                       class="input-field @error('billing_first_name') border-red-400 @enderror">
+                                @error('billing_first_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="form-label">Cognome *</label>
+                                <input type="text" name="billing_last_name" value="{{ old('billing_last_name') }}"
+                                       class="input-field @error('billing_last_name') border-red-400 @enderror">
+                                @error('billing_last_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label class="form-label">Azienda</label>
+                            <input type="text" name="billing_company" value="{{ old('billing_company') }}" class="input-field">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label class="form-label">P.IVA</label>
+                                <input type="text" name="billing_vat_number" value="{{ old('billing_vat_number') }}" class="input-field">
+                            </div>
+                            <div>
+                                <label class="form-label">Codice Fiscale</label>
+                                <input type="text" name="billing_tax_code" value="{{ old('billing_tax_code') }}" class="input-field">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label class="form-label">Indirizzo *</label>
+                            <input type="text" name="billing_address" value="{{ old('billing_address') }}"
+                                   class="input-field @error('billing_address') border-red-400 @enderror">
+                            @error('billing_address') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 mt-4">
+                            <div class="col-span-2">
+                                <label class="form-label">Città *</label>
+                                <input type="text" name="billing_city" value="{{ old('billing_city') }}"
+                                       class="input-field @error('billing_city') border-red-400 @enderror">
+                                @error('billing_city') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="form-label">Prov. *</label>
+                                <input type="text" name="billing_province" value="{{ old('billing_province') }}"
+                                       maxlength="2" class="input-field uppercase @error('billing_province') border-red-400 @enderror">
+                                @error('billing_province') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label class="form-label">CAP *</label>
+                                <input type="text" name="billing_postal_code" value="{{ old('billing_postal_code') }}"
+                                       class="input-field @error('billing_postal_code') border-red-400 @enderror">
+                                @error('billing_postal_code') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label class="form-label">Codice SDI</label>
+                                <input type="text" name="billing_sdi_code" value="{{ old('billing_sdi_code') }}"
+                                       maxlength="7" class="input-field uppercase">
+                            </div>
+                            <div>
+                                <label class="form-label">PEC</label>
+                                <input type="email" name="billing_pec" value="{{ old('billing_pec') }}" class="input-field">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="border border-gray-300 p-6">
                 <h2 class="text-sm font-semibold tracking-wider uppercase text-gray-400 mb-3">Note ordine</h2>
                 <textarea id="notes" name="notes" rows="3"
@@ -130,6 +248,20 @@
                             <span class="payment-card-badge">VISA</span>
                             <span class="payment-card-badge">MC</span>
                             <span class="payment-card-badge">AMEX</span>
+                        </span>
+                    </label>
+
+                    {{-- Satispay --}}
+                    <label class="cursor-pointer payment-method-option" id="opt-satispay">
+                        <input type="radio" name="payment_method" value="satispay" class="sr-only"
+                            {{ old('payment_method') === 'satispay' ? 'checked' : '' }}>
+                        <span class="payment-method-radio"></span>
+                        <span class="flex items-center gap-3 flex-1">
+                            <img src="{{ asset('images/satispay-logo.png') }}" alt="Satispay" class="h-5 w-auto flex-shrink-0" data-hide-on-error>
+                            <span>
+                                <span class="text-sm font-medium text-gray-800">Satispay</span>
+                                <span class="block text-xs text-gray-400">Verrai reindirizzato su Satispay per completare il pagamento</span>
+                            </span>
                         </span>
                     </label>
 

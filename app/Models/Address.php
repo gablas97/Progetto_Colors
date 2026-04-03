@@ -40,7 +40,6 @@ class Address extends Model
         static::saving(function ($address) {
             if ($address->is_default) {
                 static::where('user_id', $address->user_id)
-                      ->where('type', $address->type)
                       ->where('id', '!=', $address->id)
                       ->update(['is_default' => false]);
             }

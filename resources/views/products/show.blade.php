@@ -106,19 +106,21 @@
 
             {{-- Varianti --}}
             @if($product->variants->isNotEmpty())
+            @php
+            $colorMap = ['rosso'=>'#e53e3e','blu'=>'#3182ce','verde'=>'#38a169','nero'=>'#1a202c','bianco'=>'#ffffff','giallo'=>'#ecc94b','arancione'=>'#ed8936','viola'=>'#805ad5','rosa'=>'#ed64a6','grigio'=>'#718096','marrone'=>'#744210','azzurro'=>'#63b3ed'];
+            @endphp
             <div class="mb-6">
-                <p class="text-xs font-semibold tracking-wider uppercase text-gray-500 mb-3">Variante</p>
+                <p class="text-xs font-semibold tracking-wider uppercase text-gray-500 mb-2">Variante: <span id="selected-variant-label" class="normal-case font-normal text-gray-700"></span></p>
                 <div class="flex flex-wrap gap-2" id="variant-selector">
                     @foreach($product->variants as $variant)
+                        @php $color = $colorMap[strtolower($variant->name)] ?? '#9ca3af'; @endphp
                         <button type="button"
-                                class="variant-btn border border-gray-200 px-3 py-1.5 text-xs text-gray-700 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                                class="variant-btn variant-swatch w-5 h-5"
+                                style="background-color:{{ $color }}"
                                 data-variant-id="{{ $variant->id }}"
                                 data-variant-name="{{ $variant->name }}"
+                                title="{{ $variant->name }}{{ !$variant->isInStock() ? ' (esaurito)' : '' }}"
                                 @if(!$variant->isInStock()) disabled @endif>
-                            {{ $variant->name }}
-                            @if(!$variant->isInStock())
-                                <span class="text-gray-300 ml-1">(esaurito)</span>
-                            @endif
                         </button>
                     @endforeach
                 </div>
@@ -131,7 +133,10 @@
                 $allVariantsOut = $product->variants->isNotEmpty() && $product->variants->every(fn($v) => !$v->isInStock());
                 $disableCart = $outOfStock || $allVariantsOut;
             @endphp
-            <form action="{{ route('cart.add') }}" method="POST" class="flex items-center gap-3 mb-6">
+            @if($product->variants->isNotEmpty() && !$disableCart)
+            <p id="variant-required-msg" class="hidden text-xs text-red-500 mb-3">Seleziona una variante prima di aggiungere al carrello.</p>
+            @endif
+            <form action="{{ route('cart.add') }}" method="POST" class="flex items-center gap-3 mb-6" id="add-to-cart-form">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                 <input type="hidden" name="product_variant_id" id="selected-variant" value="">

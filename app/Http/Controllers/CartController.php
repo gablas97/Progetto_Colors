@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -75,9 +76,16 @@ class CartController extends Controller
 
         $product  = Product::active()->findOrFail($request->product_id);
         $quantity = $request->integer('quantity', 1);
+        $variant  = $request->filled('product_variant_id')
+            ? ProductVariant::findOrFail($request->product_variant_id)
+            : null;
+
+        if ($product->variants()->active()->exists() && !$variant) {
+            return back()->withErrors(['variant' => 'Seleziona una variante prima di aggiungere al carrello.']);
+        }
 
         $cart = $this->resolveCart();
-        $cart->addItem($product, $request->product_variant_id, $quantity);
+        $cart->addItem($product, $variant, $quantity);
         $this->syncCartCount($cart);
 
         if ($request->expectsJson()) {
@@ -109,6 +117,15 @@ class CartController extends Controller
         $this->syncCartCount($cart);
 
         return back()->with('success', 'Prodotto rimosso dal carrello.');
+    }
+
+    public function clear()
+    {
+        $cart = $this->resolveCart();
+        $cart->items()->delete();
+        $this->syncCartCount($cart);
+
+        return redirect()->route('cart.index')->with('success', 'Carrello svuotato.');
     }
 
     private function authorizeItem(CartItem $item): void

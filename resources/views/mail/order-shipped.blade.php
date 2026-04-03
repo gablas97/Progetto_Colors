@@ -48,7 +48,7 @@
         <td>
             <p style="margin:0 0 4px; font-size:13px; font-weight:700; color:#162032;">Sei soddisfatto del servizio?</p>
             <p style="margin:0 0 14px; font-size:12px; color:#6b7280;">La tua opinione è importante — aiuta altri clienti a scegliere Colors.</p>
-            <a href="https://g.page/r/{{ $placeId }}/review"
+            <a href="https://search.google.com/local/writereview?placeid={{ $placeId }}"
                style="display:inline-block; background-color:#ffffff; border:1px solid #e5e7eb; color:#374151; text-decoration:none; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:10px 24px;">
                 ★ Lascia una recensione su Google
             </a>

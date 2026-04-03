@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "90aef4f46f8884327bcb7b346a74e6c2",
+    "content-hash": "e7f0e1093ba9871027596f5a347511a1",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -5085,6 +5085,116 @@
             "time": "2025-12-27T19:41:33+00:00"
         },
         {
+            "name": "phpseclib/phpseclib",
+            "version": "2.0.52",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpseclib/phpseclib.git",
+                "reference": "2552c4001631d1cc844332faea6a08a49c964b28"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/2552c4001631d1cc844332faea6a08a49c964b28",
+                "reference": "2552c4001631d1cc844332faea6a08a49c964b28",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "require-dev": {
+                "phing/phing": "~2.7",
+                "phpunit/phpunit": "^4.8.35|^5.7|^6.0|^8.5|^9.4",
+                "squizlabs/php_codesniffer": "~2.0"
+            },
+            "suggest": {
+                "ext-gmp": "Install the GMP (GNU Multiple Precision) extension in order to speed up arbitrary precision integer arithmetic operations.",
+                "ext-libsodium": "SSH2/SFTP can make use of some algorithms provided by the libsodium-php extension.",
+                "ext-mcrypt": "Install the Mcrypt extension in order to speed up a few other cryptographic operations.",
+                "ext-openssl": "Install the OpenSSL extension in order to speed up a wide variety of cryptographic operations.",
+                "ext-xml": "Install the XML extension to load XML formatted public keys."
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "phpseclib/bootstrap.php"
+                ],
+                "psr-4": {
+                    "phpseclib\\": "phpseclib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jim Wigginton",
+                    "email": "terrafrost@php.net",
+                    "role": "Lead Developer"
+                },
+                {
+                    "name": "Patrick Monnerat",
+                    "email": "pm@datasphere.ch",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Andreas Fischer",
+                    "email": "bantu@phpbb.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Hans-Jürgen Petrich",
+                    "email": "petrich@tronic-media.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Graham Campbell",
+                    "email": "graham@alt-three.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "PHP Secure Communications Library - Pure-PHP implementations of RSA, AES, SSH2, SFTP, X.509 etc.",
+            "homepage": "http://phpseclib.sourceforge.net",
+            "keywords": [
+                "BigInteger",
+                "aes",
+                "asn.1",
+                "asn1",
+                "blowfish",
+                "crypto",
+                "cryptography",
+                "encryption",
+                "rsa",
+                "security",
+                "sftp",
+                "signature",
+                "signing",
+                "ssh",
+                "twofish",
+                "x.509",
+                "x509"
+            ],
+            "support": {
+                "issues": "https://github.com/phpseclib/phpseclib/issues",
+                "source": "https://github.com/phpseclib/phpseclib/tree/2.0.52"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/terrafrost",
+                    "type": "github"
+                },
+                {
+                    "url": "https://www.patreon.com/phpseclib",
+                    "type": "patreon"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/phpseclib/phpseclib",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-03-19T02:54:44+00:00"
+        },
+        {
             "name": "pragmarx/google2fa",
             "version": "v9.0.0",
             "source": {
@@ -6049,6 +6159,58 @@
                 "source": "https://github.com/MyIntervals/PHP-CSS-Parser/tree/v9.3.0"
             },
             "time": "2026-03-03T17:31:43+00:00"
+        },
+        {
+            "name": "satispay/gbusiness-api-php-sdk",
+            "version": "1.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/satispay/gbusiness-api-php-sdk.git",
+                "reference": "370cd206610986f857c5aa88166d31b20c5d7bf3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/satispay/gbusiness-api-php-sdk/zipball/370cd206610986f857c5aa88166d31b20c5d7bf3",
+                "reference": "370cd206610986f857c5aa88166d31b20c5d7bf3",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "php": ">=5.4.0",
+                "phpseclib/phpseclib": "^2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "SatispayGBusiness\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Satispay",
+                    "homepage": "https://www.satispay.com"
+                }
+            ],
+            "description": "Satispay GBusiness API PHP SDK",
+            "homepage": "https://www.satispay.com",
+            "keywords": [
+                "api",
+                "gbusiness",
+                "php",
+                "satispay",
+                "sdk"
+            ],
+            "support": {
+                "issues": "https://github.com/satispay/gbusiness-api-php-sdk/issues",
+                "source": "https://github.com/satispay/gbusiness-api-php-sdk/tree/1.4.1"
+            },
+            "time": "2024-10-17T13:33:49+00:00"
         },
         {
             "name": "scrivo/highlight.php",

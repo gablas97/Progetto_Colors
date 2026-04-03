@@ -26,7 +26,17 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
             {{-- Lista articoli --}}
-            <div class="lg:col-span-2 divide-y divide-gray-100">
+            <div class="lg:col-span-2">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <span class="text-xs text-gray-400">{{ $cart->items->sum('quantity') }} {{ $cart->items->sum('quantity') === 1 ? 'articolo' : 'articoli' }}</span>
+                    <form method="POST" action="{{ route('cart.clear') }}">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-xs text-primary uppercase font-semibold hover:text-primary-dark transition-colors cursor-pointer">
+                            Svuota carrello
+                        </button>
+                    </form>
+                </div>
+            <div class="divide-y divide-gray-100">
                 @foreach($cart->items as $item)
                 <div class="flex gap-4 py-5">
                     {{-- Immagine --}}
@@ -86,6 +96,7 @@
                     </div>
                 </div>
                 @endforeach
+            </div>
             </div>
 
             {{-- Riepilogo --}}

@@ -21,15 +21,16 @@ class AccountController extends Controller
 {
     public function index()
     {
-        $user           = auth()->user();
-        $recentOrders   = $user->orders()->latest()->limit(5)->get();
-        $ordersCount    = $user->orders()->count();
-        $wishlistCount  = $user->wishlists()->count();
-        $defaultAddress = $user->addresses()->where('is_default', true)->first()
-                        ?? $user->addresses()->first();
+        $user              = auth()->user();
+        $recentOrders      = $user->orders()->latest()->limit(5)->get();
+        $ordersCount       = $user->orders()->count();
+        $wishlistCount     = $user->wishlists()->count();
+        $defaultAddress    = $user->addresses()->where('is_default', true)->first()
+                           ?? $user->addresses()->first();
+        $hasDeliveredOrder = $user->orders()->where('status', 'delivered')->exists();
 
         return view('account.index', compact(
-            'user', 'recentOrders', 'ordersCount', 'wishlistCount', 'defaultAddress'
+            'user', 'recentOrders', 'ordersCount', 'wishlistCount', 'defaultAddress', 'hasDeliveredOrder'
         ));
     }
 
@@ -104,6 +105,15 @@ class AccountController extends Controller
         $address->delete();
 
         return back()->with('success', 'Indirizzo eliminato.');
+    }
+
+    public function setDefaultAddress(Address $address)
+    {
+        abort_unless($address->user_id === auth()->id(), 403);
+
+        $address->update(['is_default' => true]);
+
+        return back()->with('success', 'Indirizzo predefinito aggiornato.');
     }
 
     public function wishlist()

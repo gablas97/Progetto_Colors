@@ -36,21 +36,24 @@
         </button>
     </div>
 
-    {{-- Varianti (pallini) --}}
+    {{-- Varianti (pallini selezionabili) --}}
     @if($product->variants->isNotEmpty())
-        <div class="flex gap-1 mt-2">
-            @foreach($product->variants->take(5) as $variant)
-                <span
-                    class="w-3.5 h-3.5 rounded-full border border-gray-200 bg-gray-300 cursor-default"
-                    title="{{ $variant->name }}">
-                </span>
+        @php
+        $colorMap = ['rosso'=>'#e53e3e','blu'=>'#3182ce','verde'=>'#38a169','nero'=>'#1a202c','bianco'=>'#ffffff','giallo'=>'#ecc94b','arancione'=>'#ed8936','viola'=>'#805ad5','rosa'=>'#ed64a6','grigio'=>'#718096','marrone'=>'#744210','azzurro'=>'#63b3ed'];
+        @endphp
+        <div class="flex gap-1 mt-2 items-center">
+            @foreach($product->variants as $variant)
+                @php $color = $colorMap[strtolower($variant->name)] ?? '#9ca3af'; @endphp
+                <button type="button"
+                        class="card-variant-btn variant-swatch w-4 h-4"
+                        style="background-color: {{ $color }}"
+                        data-variant-id="{{ $variant->id }}"
+                        title="{{ $variant->name }}"></button>
             @endforeach
-            @if($product->variants->count() > 5)
-                <span class="text-[10px] text-gray-400 self-center">+{{ $product->variants->count() - 5 }}</span>
-            @endif
         </div>
+        <p class="card-variant-error hidden text-[10px] text-red-500 mt-1">Seleziona una variante.</p>
     @else
-        <div class="mt-2 h-3.5"></div>
+        <div class="mt-2 h-4"></div>
     @endif
 
     {{-- Info prodotto --}}

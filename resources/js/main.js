@@ -54,12 +54,47 @@ document.addEventListener('click', function (e) {
     .catch(() => {});
 });
 
+/* ── Card variant selector ────────────────────────────────────────────── */
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.card-variant-btn');
+    if (!btn) return;
+
+    const card = btn.closest('.group');
+    if (!card) return;
+
+    card.querySelectorAll('.card-variant-btn').forEach(function (b) {
+        b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+
+    const errMsg = card.querySelector('.card-variant-error');
+    if (errMsg) errMsg.classList.add('hidden');
+});
+
 /* ── Add to cart (dalla card prodotto) ───────────────────────────────── */
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('[data-action="add-to-cart"]');
     if (!btn) return;
 
     const productId = btn.dataset.productId;
+    const card = btn.closest('.group');
+
+    // Controlla se la card ha varianti e se ne è stata selezionata una
+    if (card) {
+        const variantBtns = card.querySelectorAll('.card-variant-btn');
+        if (variantBtns.length > 0) {
+            const selected = card.querySelector('.card-variant-btn.selected');
+            if (!selected) {
+                const errMsg = card.querySelector('.card-variant-error');
+                if (errMsg) errMsg.classList.remove('hidden');
+                return;
+            }
+        }
+    }
+
+    const selectedVariant = card ? card.querySelector('.card-variant-btn.selected') : null;
+    const body = { product_id: productId, quantity: 1 };
+    if (selectedVariant) body.product_variant_id = selectedVariant.dataset.variantId;
 
     fetch('/carrello', {
         method: 'POST',
@@ -68,14 +103,13 @@ document.addEventListener('click', function (e) {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+        body: JSON.stringify(body),
     })
     .then(res => res.json())
     .then(data => {
         document.querySelectorAll('[data-cart-count]').forEach(el => {
             el.textContent = data.cart_count ?? '';
         });
-        
     })
     .catch(() => {});
 });
@@ -116,12 +150,31 @@ if (qtyInput) {
 document.querySelectorAll('.variant-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
         document.querySelectorAll('.variant-btn').forEach(function (b) {
-            b.classList.remove('border-primary', 'text-primary');
+            b.classList.remove('selected');
         });
-        btn.classList.add('border-primary', 'text-primary');
+        btn.classList.add('selected');
         const sel = document.getElementById('selected-variant');
         if (sel) sel.value = btn.dataset.variantId;
+        const label = document.getElementById('selected-variant-label');
+        if (label) label.textContent = btn.dataset.variantName;
+        const msg = document.getElementById('variant-required-msg');
+        if (msg) msg.classList.add('hidden');
     });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const addToCartForm = document.getElementById('add-to-cart-form');
+    if (addToCartForm) {
+        addToCartForm.addEventListener('submit', function (e) {
+            const sel = document.getElementById('selected-variant');
+            const hasVariants = document.querySelectorAll('.variant-btn').length > 0;
+            if (hasVariants && (!sel || !sel.value)) {
+                e.preventDefault();
+                const msg = document.getElementById('variant-required-msg');
+                if (msg) msg.classList.remove('hidden');
+            }
+        });
+    }
 });
 
 /* ── Cart dropdown preview ───────────────────────────────────────────── */
@@ -289,6 +342,25 @@ if (deleteToggleBtn && deleteAccountForm) {
 })();
 
 /* ── Checkout ─────────────────────────────────────────────────────────── */
+/* ── Checkout: sezione fatturazione ──────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+    var checkbox   = document.getElementById('billing-different-checkbox');
+    var section    = document.getElementById('billing-section');
+    var formFields = document.getElementById('billing-form-fields');
+
+    if (!checkbox || !section || !formFields) return;
+
+    checkbox.addEventListener('change', function () {
+        section.classList.toggle('hidden', !this.checked);
+    });
+
+    document.querySelectorAll('.billing-saved-radio').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            formFields.classList.toggle('hidden', this.value !== 'new');
+        });
+    });
+});
+
 (function () {
     var form = document.getElementById('checkout-form');
     if (!form) return;
