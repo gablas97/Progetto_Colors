@@ -51,24 +51,18 @@
                     <div class="flex-1 px-8 pt-12 pb-8">
                         <div class="flex justify-center mb-5">
                             @if($service['icon'] === 'printer')
-                                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z"/>
-                                </svg>
+                                <img src="{{ asset('images/stampa-logo.png') }}" alt="Stampa e fotocopie" class="w-8 h-8 object-contain">
                             @elseif($service['icon'] === 'sparkles')
-                                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"/>
-                                </svg>
-                            @else
-                                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.745 3.745 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.745 3.745 0 0 1 3.296-1.043A3.745 3.745 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.745 3.745 0 0 1 3.296 1.043 3.745 3.745 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/>
-                                </svg>
+                                <img src="{{ asset('images/grafica-logo.png') }}" alt="Grafica personalizzata" class="w-8 h-8 object-contain">
+                            @elseif($service['icon'] === 'stamp')
+                                <img src="{{ asset('images/timbro-logo.png') }}" alt="Timbri" class="w-8 h-8 object-contain">
                             @endif
                         </div>
                         <h3 class="text-xl font-semibold text-gray-900">{{ $service['name'] }}</h3>
                     </div>
                     <div class="service-divider"></div>
                     <div class="flex-1 flex flex-col justify-end px-8 pt-8 pb-12">
-                        <p class="text-sm text-gray-500 leading-relaxed mb-6">{{ $service['description'] }}</p>
+                        <p class="text-sm text-gray-500 leading-relaxed mb-6 whitespace-pre-line text-justify">{!! str_replace('✓', '<span class="text-green-500">✓</span>', e($service['description'])) !!}</p>
                         <a href="{{ route('services') }}" class="text-xs font-semibold tracking-wider uppercase text-primary hover:text-primary-dark transition-colors">
                             Scopri di più
                         </a>

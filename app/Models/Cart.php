@@ -112,6 +112,7 @@ class Cart extends Model
     public function clear(): void
     {
         $this->items()->delete();
+        session(['cart_count' => 0]);
     }
 
     public function isEmpty(): bool

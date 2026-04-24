@@ -109,6 +109,10 @@
             <span>Totale</span>
             <span>€ {{ number_format($order->total, 2, ',', '.') }}</span>
         </div>
+        <div class="flex justify-between border-t border-gray-100 pt-2 text-gray-500">
+            <span>Metodo di pagamento</span>
+            <span>{{ $order->payment_method_label }}</span>
+        </div>
     </div>
 
     {{-- Indirizzo spedizione --}}

@@ -27,7 +27,7 @@
         <div class="border border-gray-100">
             @foreach($orders as $order)
             <div class="{{ !$loop->last ? 'border-b border-gray-100' : '' }}">
-                <a href="{{ route('account.orders.show', $order->id) }}"
+                <a href="{{ route('account.orders.show', $order->order_number) }}"
                    class="flex items-center justify-between px-5 py-5 hover:bg-gray-50 transition-colors block">
                     <div>
                         <p class="text-sm font-semibold text-gray-800">{{ $order->order_number }}</p>

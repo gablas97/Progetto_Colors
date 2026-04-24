@@ -22,8 +22,8 @@ class AccountController extends Controller
     public function index()
     {
         $user              = auth()->user();
-        $recentOrders      = $user->orders()->latest()->limit(5)->get();
-        $ordersCount       = $user->orders()->count();
+        $recentOrders      = $user->orders()->where('payment_status', 'paid')->latest()->limit(5)->get();
+        $ordersCount       = $user->orders()->where('payment_status', 'paid')->count();
         $wishlistCount     = $user->wishlists()->count();
         $defaultAddress    = $user->addresses()->where('is_default', true)->first()
                            ?? $user->addresses()->first();
@@ -38,7 +38,8 @@ class AccountController extends Controller
     {
         $orders = auth()->user()
             ->orders()
-            ->latest()
+            ->where('payment_status', 'paid')
+            ->orderByDesc('id')
             ->paginate(10);
 
         return view('account.orders', compact('orders'));
@@ -159,15 +160,16 @@ class AccountController extends Controller
             'first_name'           => ['required', 'string', 'max:255'],
             'last_name'            => ['required', 'string', 'max:255'],
             'phone'                => ['nullable', 'string', 'max:20'],
-            'newsletter_subscribed'=> ['nullable', 'boolean'],
-            'current_password'     => ['nullable', 'required_with:new_password', 'string'],
+            'newsletter_subscribed'=> ['nullable'],
+            'current_password'     => ['nullable', 'required_with:new_password', function ($attr, $value, $fail) {
+                if (filled($value) && ! Hash::check($value, auth()->user()->password)) {
+                    $fail('La password inserita non è corretta.');
+                }
+            }],
             'new_password'         => ['nullable', 'confirmed', Password::min(8)],
         ]);
 
-        if (isset($data['current_password'])) {
-            if (! Hash::check($data['current_password'], $user->password)) {
-                return back()->withErrors(['current_password' => 'La password attuale non è corretta.']);
-            }
+        if (!empty($data['new_password'])) {
             $user->password = Hash::make($data['new_password']);
         }
 

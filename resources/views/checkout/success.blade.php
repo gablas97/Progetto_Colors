@@ -12,7 +12,8 @@
 
     <h1 class="text-2xl font-semibold text-gray-900 mb-2">Ordine ricevuto!</h1>
     <p class="text-gray-500 text-sm mb-1">Numero ordine: <span class="font-semibold text-gray-700">{{ $order->order_number }}</span></p>
-    <p class="text-gray-400 text-xs mb-8">Ti contatteremo per confermare i dettagli e il pagamento.</p>
+    <p class="text-gray-400 text-xs mb-1">Pagamento: <span class="font-medium">{{ $order->payment_method_label }}</span></p>
+    <p class="text-gray-400 text-xs mb-8">Ti contatteremo per confermare i dettagli.</p>
 
     <div class="border border-gray-100 text-left mb-8">
         @foreach($order->items as $item)
@@ -49,7 +50,9 @@
     </div>
 
     <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="{{ route('account.orders.show', $order->order_number) }}" class="btn-primary">Visualizza ordine</a>
+        @auth
+            <a href="{{ route('account.orders.show', $order->order_number) }}" class="btn-primary">Visualizza ordine</a>
+        @endauth
         <a href="{{ route('products.index') }}" class="btn-outline-dark">Continua gli acquisti</a>
     </div>
 

@@ -23,7 +23,7 @@
     </section>
 
     {{-- ===== STAMPE E FOTOCOPIE ===== --}}
-    <section class="py-16 md:py-24 bg-primary-light">
+    <section class="py-16 md:py-24 bg-primary-light" id="Stampe-e-fotocopie">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div>
@@ -52,11 +52,11 @@
     </section>
 
     {{-- ===== GRAFICA ===== --}}
-    <section class="py-16 md:py-24 bg-gray-50">
+    <section class="py-16 md:py-24 bg-gray-50" id="Grafica">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div class="aspect-[4/3] bg-gray-200 overflow-hidden">
-                    <img src="{{ asset('images/services-graphic.jpg') }}"
+                    <img src="{{ asset('images/services-graphic.png') }}"
                          alt="Grafica personalizzata"
                          class="w-full h-full object-cover"
                          data-hide-on-error>
@@ -81,7 +81,7 @@
     </section>
 
     {{-- ===== TIMBRI ===== --}}
-    <section class="py-16 md:py-24 bg-primary-light">
+    <section class="py-16 md:py-24 bg-primary-light" id="Timbri">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div>
@@ -100,7 +100,7 @@
                     </p>
                 </div>
                 <div class="aspect-[4/3] bg-gray-200 overflow-hidden">
-                    <img src="{{ asset('images/services-stamps.jpg') }}"
+                    <img src="{{ asset('images/services-stamps.png') }}"
                          alt="Timbri"
                          class="w-full h-full object-cover"
                          data-hide-on-error>

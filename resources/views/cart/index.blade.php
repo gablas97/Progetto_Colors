@@ -51,48 +51,50 @@
                         @endif
                     </a>
 
-                    {{-- Info --}}
-                    <div class="flex-1 min-w-0">
-                        <a href="{{ route('products.show', $item->product->slug) }}"
-                           class="text-sm font-medium text-gray-800 hover:text-primary transition-colors line-clamp-2">
-                            {{ $item->product->name }}
-                        </a>
-                        @if($item->productVariant)
-                            <p class="text-xs text-gray-400 mt-0.5">{{ $item->productVariant->name }}</p>
-                        @endif
-                        <p class="text-sm font-semibold text-gray-900 mt-1">
-                            € {{ number_format($item->product->price, 2, ',', '.') }}
-                        </p>
-                    </div>
+                    {{-- Info + quantità --}}
+                    <div class="flex-1 min-w-0 flex flex-col gap-2">
+                        {{-- Nome, variante, prezzo --}}
+                        <div class="min-w-0">
+                            <a href="{{ route('products.show', $item->product->slug) }}"
+                               class="text-sm font-medium text-gray-800 hover:text-primary transition-colors line-clamp-2">
+                                {{ $item->product->name }}
+                            </a>
+                            @if($item->productVariant)
+                                <p class="text-xs text-gray-400 mt-0.5">{{ $item->productVariant->name }}</p>
+                            @endif
+                            <p class="text-sm font-semibold text-gray-900 mt-1">
+                                € {{ number_format($item->product->price, 2, ',', '.') }}
+                            </p>
+                        </div>
 
-                    {{-- Quantità --}}
-                    <div class="flex items-center gap-2">
-                        <form method="POST" action="{{ route('cart.update', $item->id) }}">
-                            @csrf @method('PATCH')
-                            <div class="flex items-center border border-gray-300">
-                                <button type="submit" name="quantity" value="{{ max(1, $item->quantity - 1) }}"
-                                        class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm cursor-pointer">−</button>
-                                <span class="px-3 text-sm text-gray-700">{{ $item->quantity }}</span>
-                                <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}"
-                                        class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm cursor-pointer">+</button>
+                        {{-- Quantità + rimuovi + totale riga --}}
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <form method="POST" action="{{ route('cart.update', $item->id) }}">
+                                    @csrf @method('PATCH')
+                                    <div class="flex items-center border border-gray-300">
+                                        <button type="submit" name="quantity" value="{{ max(1, $item->quantity - 1) }}"
+                                                class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm cursor-pointer">−</button>
+                                        <span class="px-3 text-sm text-gray-700">{{ $item->quantity }}</span>
+                                        <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}"
+                                                class="px-2.5 py-1.5 text-gray-500 hover:text-gray-900 transition-colors text-sm cursor-pointer">+</button>
+                                    </div>
+                                </form>
+
+                                <form method="POST" action="{{ route('cart.remove', $item->id) }}">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="p-1.5 text-gray-300 hover:text-red-400 transition-colors cursor-pointer" aria-label="Rimuovi">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </form>
                             </div>
-                        </form>
 
-                        <form method="POST" action="{{ route('cart.remove', $item->id) }}">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="p-1.5 text-gray-300 hover:text-red-400 transition-colors cursor-pointer" aria-label="Rimuovi">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
-
-                    {{-- Totale riga --}}
-                    <div class="w-20 text-right">
-                        <span class="text-sm font-semibold text-gray-900">
-                            € {{ number_format($item->product->price * $item->quantity, 2, ',', '.') }}
-                        </span>
+                            <span class="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                                € {{ number_format($item->product->price * $item->quantity, 2, ',', '.') }}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 @endforeach

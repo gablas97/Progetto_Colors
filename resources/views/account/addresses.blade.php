@@ -63,18 +63,18 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="form-label">Nome *</label>
-                    <input type="text" name="first_name" value="{{ old('first_name') }}" required class="input-field">
+                    <label for="addr_first_name" class="form-label">Nome *</label>
+                    <input id="addr_first_name" type="text" name="first_name" value="{{ old('first_name') }}" required autocomplete="given-name" class="input-field">
                 </div>
                 <div>
-                    <label class="form-label">Cognome *</label>
-                    <input type="text" name="last_name" value="{{ old('last_name') }}" required class="input-field">
+                    <label for="addr_last_name" class="form-label">Cognome *</label>
+                    <input id="addr_last_name" type="text" name="last_name" value="{{ old('last_name') }}" required autocomplete="family-name" class="input-field">
                 </div>
             </div>
 
             <div>
-                <label class="form-label">Tipo indirizzo *</label>
-                <select name="type" required class="input-field">
+                <label for="addr_type" class="form-label">Tipo indirizzo *</label>
+                <select id="addr_type" name="type" required class="input-field">
                     <option value="shipping">Spedizione</option>
                     <option value="billing">Fatturazione</option>
                     <option value="both">Entrambi</option>
@@ -82,31 +82,31 @@
             </div>
 
             <div>
-                <label class="form-label">Indirizzo *</label>
-                <input type="text" name="address" value="{{ old('address') }}" required class="input-field">
+                <label for="addr_address" class="form-label">Indirizzo *</label>
+                <input id="addr_address" type="text" name="address" value="{{ old('address') }}" required autocomplete="street-address" class="input-field">
             </div>
 
             <div class="grid grid-cols-3 gap-4">
                 <div class="col-span-2">
-                    <label class="form-label">Città *</label>
-                    <input type="text" name="city" value="{{ old('city') }}" required class="input-field">
+                    <label for="addr_city" class="form-label">Città *</label>
+                    <input id="addr_city" type="text" name="city" value="{{ old('city') }}" required autocomplete="address-level2" class="input-field">
                 </div>
                 <div>
-                    <label class="form-label">Prov. *</label>
-                    <input type="text" name="province" value="{{ old('province') }}" required maxlength="2" class="input-field uppercase">
+                    <label for="addr_province" class="form-label">Prov. *</label>
+                    <input id="addr_province" type="text" name="province" value="{{ old('province') }}" required maxlength="2" autocomplete="address-level1" class="input-field uppercase">
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="form-label">CAP *</label>
-                    <input type="text" name="postal_code" value="{{ old('postal_code') }}" required class="input-field">
+                    <label for="addr_postal_code" class="form-label">CAP *</label>
+                    <input id="addr_postal_code" type="text" name="postal_code" value="{{ old('postal_code') }}" required autocomplete="postal-code" class="input-field">
                 </div>
                 <div>
-                    <label class="form-label">Telefono</label>
+                    <label for="addr_phone" class="form-label">Telefono</label>
                     <div class="flex">
                         <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">+39</span>
-                        <input type="tel" name="phone" value="{{ old('phone') }}" class="input-field flex-1 min-w-0">
+                        <input id="addr_phone" type="tel" name="phone" value="{{ old('phone') }}" autocomplete="tel" class="input-field flex-1 min-w-0">
                     </div>
                 </div>
             </div>

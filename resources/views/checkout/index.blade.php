@@ -149,69 +149,69 @@
                     <div id="billing-form-fields" class="{{ auth()->check() && $billingAddresses->isNotEmpty() && old('billing_saved_id') !== 'new' ? 'hidden' : '' }}">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="form-label">Nome *</label>
-                                <input type="text" name="billing_first_name" value="{{ old('billing_first_name') }}"
+                                <label for="billing_first_name" class="form-label">Nome *</label>
+                                <input id="billing_first_name" type="text" name="billing_first_name" value="{{ old('billing_first_name') }}"
                                        class="input-field @error('billing_first_name') border-red-400 @enderror">
                                 @error('billing_first_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="form-label">Cognome *</label>
-                                <input type="text" name="billing_last_name" value="{{ old('billing_last_name') }}"
+                                <label for="billing_last_name" class="form-label">Cognome *</label>
+                                <input id="billing_last_name" type="text" name="billing_last_name" value="{{ old('billing_last_name') }}"
                                        class="input-field @error('billing_last_name') border-red-400 @enderror">
                                 @error('billing_last_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                         <div class="mt-4">
-                            <label class="form-label">Azienda</label>
-                            <input type="text" name="billing_company" value="{{ old('billing_company') }}" class="input-field">
+                            <label for="billing_company" class="form-label">Azienda</label>
+                            <input id="billing_company" type="text" name="billing_company" value="{{ old('billing_company') }}" class="input-field">
                         </div>
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div>
-                                <label class="form-label">P.IVA</label>
-                                <input type="text" name="billing_vat_number" value="{{ old('billing_vat_number') }}" class="input-field">
+                                <label for="billing_vat_number" class="form-label">P.IVA</label>
+                                <input id="billing_vat_number" type="text" name="billing_vat_number" value="{{ old('billing_vat_number') }}" class="input-field">
                             </div>
                             <div>
-                                <label class="form-label">Codice Fiscale</label>
-                                <input type="text" name="billing_tax_code" value="{{ old('billing_tax_code') }}" class="input-field">
+                                <label for="billing_tax_code" class="form-label">Codice Fiscale</label>
+                                <input id="billing_tax_code" type="text" name="billing_tax_code" value="{{ old('billing_tax_code') }}" class="input-field">
                             </div>
                         </div>
                         <div class="mt-4">
-                            <label class="form-label">Indirizzo *</label>
-                            <input type="text" name="billing_address" value="{{ old('billing_address') }}"
+                            <label for="billing_address" class="form-label">Indirizzo *</label>
+                            <input id="billing_address" type="text" name="billing_address" value="{{ old('billing_address') }}"
                                    class="input-field @error('billing_address') border-red-400 @enderror">
                             @error('billing_address') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div class="grid grid-cols-3 gap-4 mt-4">
                             <div class="col-span-2">
-                                <label class="form-label">Città *</label>
-                                <input type="text" name="billing_city" value="{{ old('billing_city') }}"
+                                <label for="billing_city" class="form-label">Città *</label>
+                                <input id="billing_city" type="text" name="billing_city" value="{{ old('billing_city') }}"
                                        class="input-field @error('billing_city') border-red-400 @enderror">
                                 @error('billing_city') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="form-label">Prov. *</label>
-                                <input type="text" name="billing_province" value="{{ old('billing_province') }}"
+                                <label for="billing_province" class="form-label">Prov. *</label>
+                                <input id="billing_province" type="text" name="billing_province" value="{{ old('billing_province') }}"
                                        maxlength="2" class="input-field uppercase @error('billing_province') border-red-400 @enderror">
                                 @error('billing_province') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div>
-                                <label class="form-label">CAP *</label>
-                                <input type="text" name="billing_postal_code" value="{{ old('billing_postal_code') }}"
+                                <label for="billing_postal_code" class="form-label">CAP *</label>
+                                <input id="billing_postal_code" type="text" name="billing_postal_code" value="{{ old('billing_postal_code') }}"
                                        class="input-field @error('billing_postal_code') border-red-400 @enderror">
                                 @error('billing_postal_code') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div>
-                                <label class="form-label">Codice SDI</label>
-                                <input type="text" name="billing_sdi_code" value="{{ old('billing_sdi_code') }}"
+                                <label for="billing_sdi_code" class="form-label">Codice SDI</label>
+                                <input id="billing_sdi_code" type="text" name="billing_sdi_code" value="{{ old('billing_sdi_code') }}"
                                        maxlength="7" class="input-field uppercase">
                             </div>
                             <div>
-                                <label class="form-label">PEC</label>
-                                <input type="email" name="billing_pec" value="{{ old('billing_pec') }}" class="input-field">
+                                <label for="billing_pec" class="form-label">PEC</label>
+                                <input id="billing_pec" type="email" name="billing_pec" value="{{ old('billing_pec') }}" class="input-field">
                             </div>
                         </div>
                     </div>
@@ -219,7 +219,7 @@
             </div>
 
             <div class="border border-gray-300 p-6">
-                <h2 class="text-sm font-semibold tracking-wider uppercase text-gray-400 mb-3">Note ordine</h2>
+                <label for="notes" class="text-sm font-semibold tracking-wider uppercase text-gray-400 mb-3 block">Note ordine</label>
                 <textarea id="notes" name="notes" rows="3"
                     placeholder="Istruzioni per la consegna, richieste particolari..."
                     class="input-field resize-none">{{ old('notes') }}</textarea>

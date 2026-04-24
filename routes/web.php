@@ -41,16 +41,15 @@ Route::delete('/carrello', [CartController::class, 'clear'])->name('cart.clear')
 | Checkout
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::post('/checkout/sconto/applica', [CheckoutController::class, 'applyDiscount'])->name('checkout.discount.apply');
-    Route::post('/checkout/sconto/rimuovi', [CheckoutController::class, 'removeDiscount'])->name('checkout.discount.remove');
-    Route::get('/checkout/stripe/successo', [CheckoutController::class, 'stripeSuccess'])->name('checkout.stripe.success');
-    Route::get('/checkout/paypal/successo', [CheckoutController::class, 'paypalSuccess'])->name('checkout.paypal.success');
-    Route::get('/checkout/satispay/successo', [CheckoutController::class, 'satispaySuccess'])->name('checkout.satispay.success');
-    Route::get('/checkout/successo', [CheckoutController::class, 'success'])->name('checkout.success');
-});
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout/sconto/applica', [CheckoutController::class, 'applyDiscount'])->name('checkout.discount.apply');
+Route::post('/checkout/sconto/rimuovi', [CheckoutController::class, 'removeDiscount'])->name('checkout.discount.remove');
+Route::get('/checkout/stripe/successo', [CheckoutController::class, 'stripeSuccess'])->name('checkout.stripe.success');
+Route::get('/checkout/paypal/successo', [CheckoutController::class, 'paypalSuccess'])->name('checkout.paypal.success');
+Route::get('/checkout/satispay/successo', [CheckoutController::class, 'satispaySuccess'])->name('checkout.satispay.success');
+Route::get('/checkout/successo', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::get('/checkout/errore', [CheckoutController::class, 'failed'])->name('checkout.failed');
 
 /*
 |--------------------------------------------------------------------------
@@ -103,7 +102,7 @@ Route::get('/account/riattiva/{id}', [AccountController::class, 'reactivate'])
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
     Route::get('/', [AccountController::class, 'index'])->name('index');
     Route::get('/ordini', [AccountController::class, 'orders'])->name('orders');
-    Route::get('/ordini/{order}', [AccountController::class, 'showOrder'])->name('orders.show');
+    Route::get('/ordini/{order:order_number}', [AccountController::class, 'showOrder'])->name('orders.show');
     Route::get('/indirizzi', [AccountController::class, 'addresses'])->name('addresses');
     Route::post('/indirizzi', [AccountController::class, 'storeAddress'])->name('addresses.store');
     Route::delete('/indirizzi/{address}', [AccountController::class, 'destroyAddress'])->name('addresses.destroy');

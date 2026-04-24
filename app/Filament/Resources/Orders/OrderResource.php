@@ -376,7 +376,7 @@ class OrderResource extends Resource
                     ->sortable()
                     ->toggleable(),
             ])
-            ->defaultSort('id', 'asc')
+            ->defaultSort('id', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Stato Ordine')

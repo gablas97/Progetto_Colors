@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrderConfirmedMail extends Mailable implements ShouldQueue
+class NewOrderAdminMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -18,11 +18,11 @@ class OrderConfirmedMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Ordine #' . $this->order->order_number . ' ricevuto - Colors S.r.l.');
+        return new Envelope(subject: 'Nuovo ordine #' . $this->order->order_number . ' – Colors S.r.l.');
     }
 
     public function content(): Content
     {
-        return new Content(view: 'mail.order-confirmed');
+        return new Content(view: 'mail.new-order-admin');
     }
 }

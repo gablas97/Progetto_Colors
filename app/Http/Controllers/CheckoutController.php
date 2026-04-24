@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Stripe\Checkout\Session as StripeSession;
+use Stripe\Stripe;
 
 class CheckoutController extends Controller
 {
@@ -217,7 +218,7 @@ class CheckoutController extends Controller
                 'payment_status'       => 'pending',
                 'status'               => 'pending',
                 'notes'                => $data['notes'] ?? null,
-                'source'               => 'web',
+                'source'               => 'online',
             ]);
 
             foreach ($cart->items as $item) {
@@ -238,7 +239,6 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            $cart->clear();
             $orderId = $order->id;
         });
 
@@ -255,7 +255,7 @@ class CheckoutController extends Controller
         return match($data['payment_method']) {
             'stripe'   => $this->redirectToStripe($order),
             'satispay' => $this->redirectToSatispay($order),
-            default    => $this->redirectToPayPal($order),
+            'paypal'    => $this->redirectToPayPal($order),
         };
     }
 
@@ -325,7 +325,7 @@ class CheckoutController extends Controller
         $session = StripeSession::retrieve($sessionId);
 
         if ($session->payment_status !== 'paid') {
-            return redirect()->route('checkout.index')->with('error', 'Pagamento non completato. Riprova.');
+            return redirect()->route('checkout.failed');
         }
 
         $orderId = $session->metadata->order_id ?? session('stripe_session_order_' . $sessionId);
@@ -336,6 +336,7 @@ class CheckoutController extends Controller
         if (!$order->isPaid()) {
             $order->markAsPaid($session->payment_intent);
             $order->update(['status' => 'processing']);
+            $this->resolveCart()?->clear();
         }
 
         session()->forget('stripe_session_order_' . $sessionId);
@@ -384,7 +385,7 @@ class CheckoutController extends Controller
 
         // Fallback: se PayPal non risponde correttamente
         $order->update(['payment_method' => 'pending', 'payment_status' => 'failed']);
-        return redirect()->route('checkout.index')->with('error', 'Errore PayPal. Riprova o scegli un altro metodo di pagamento.');
+        return redirect()->route('checkout.failed');
     }
 
     public function paypalSuccess(Request $request)
@@ -410,6 +411,7 @@ class CheckoutController extends Controller
             $captureId = $result['purchase_units'][0]['payments']['captures'][0]['id'] ?? null;
             $order->markAsPaid($captureId);
             $order->update(['status' => 'processing']);
+            $this->resolveCart()?->clear();
         }
 
         session()->forget('paypal_order_' . $token);
@@ -424,30 +426,27 @@ class CheckoutController extends Controller
 
     private function redirectToSatispay(Order $order)
     {
-        $config = config('services.satispay');
-
-        \SatispayGBusiness\Api::setSandbox((bool) $config['sandbox']);
-        \SatispayGBusiness\Api::setPublicKey($config['public_key']);
-        \SatispayGBusiness\Api::setPrivateKey($config['private_key']);
-        \SatispayGBusiness\Api::setKeyId($config['key_id']);
+        $this->satispayInit();
 
         $payment = \SatispayGBusiness\Payment::create([
-            'flow'             => 'MATCH_USER',
-            'amount_unit'      => (int) round($order->total * 100),
-            'currency'         => 'EUR',
-            'redirect_url'     => route('checkout.satispay.success') . '?order_id=' . $order->id,
-            'callback_url'     => route('checkout.satispay.success') . '?order_id=' . $order->id,
-            'expiration_date'  => now()->addMinutes(30)->toIso8601String(),
-            'metadata'         => ['order_id' => $order->id],
+            'flow'         => 'MATCH_CODE',
+            'amount_unit'  => (int) round($order->total * 100),
+            'currency'     => 'EUR',
+            'redirect_url' => route('checkout.satispay.success') . '?order_id=' . $order->id,
         ]);
 
-        session(['satispay_payment_' . $payment->id => $order->id]);
+        // Mappa bidirezionale: payment_id→order_id e order_id→payment_id
+        session([
+            'satispay_payment_' . $payment->id => $order->id,
+            'satispay_order_'   . $order->id   => $payment->id,
+        ]);
 
         return redirect($payment->redirect_url);
     }
 
     public function satispaySuccess(Request $request)
     {
+        // Satispay può appendere ?payment_id= oppure &payment_id= alla redirect_url
         $paymentId = $request->query('payment_id');
         $orderId   = $request->query('order_id')
             ?? session('satispay_payment_' . $paymentId);
@@ -456,18 +455,25 @@ class CheckoutController extends Controller
 
         $order = Order::findOrFail($orderId);
 
-        if (!$order->isPaid() && $paymentId) {
-            $config = config('services.satispay');
-            \SatispayGBusiness\Api::setSandbox((bool) $config['sandbox']);
-            \SatispayGBusiness\Api::setPublicKey($config['public_key']);
-            \SatispayGBusiness\Api::setPrivateKey($config['private_key']);
-            \SatispayGBusiness\Api::setKeyId($config['key_id']);
+        // Se payment_id non è in URL, lo recuperiamo dalla sessione
+        if (!$paymentId) {
+            $paymentId = session('satispay_order_' . $order->id);
+        }
 
+        if (!$order->isPaid()) {
+            if (!$paymentId) {
+                // Nessun payment_id disponibile: torna al checkout
+                return redirect()->route('checkout.index')
+                    ->with('error', 'Pagamento non verificabile. Riprova.');
+            }
+
+            $this->satispayInit();
             $payment = \SatispayGBusiness\Payment::get($paymentId);
 
             if (($payment->status ?? '') === 'ACCEPTED') {
                 $order->markAsPaid($paymentId);
                 $order->update(['status' => 'processing']);
+                $this->resolveCart()?->clear();
             } else {
                 return redirect()->route('checkout.index')
                     ->with('error', 'Pagamento Satispay non completato. Riprova.');
@@ -479,6 +485,7 @@ class CheckoutController extends Controller
         }
 
         session()->forget('satispay_payment_' . $paymentId);
+        session()->forget('satispay_order_' . $order->id);
         session(['last_order_id' => $order->id]);
 
         return redirect()->route('checkout.success');
@@ -487,6 +494,11 @@ class CheckoutController extends Controller
     // =========================================================================
     // Pagina successo
     // =========================================================================
+
+    public function failed()
+    {
+        return view('checkout.failed');
+    }
 
     public function success()
     {
@@ -543,6 +555,22 @@ class CheckoutController extends Controller
             'amount' => (float) $amount,
             'label'  => $stored['label'] ?? $this->discountLabel($discount),
         ];
+    }
+
+    private function satispayInit(): void
+    {
+        $config = config('services.satispay');
+        \SatispayGBusiness\Api::setSandbox((bool) $config['sandbox']);
+        \SatispayGBusiness\Api::setPublicKey($this->formatPemKey($config['public_key'], false));
+        \SatispayGBusiness\Api::setPrivateKey($this->formatPemKey($config['private_key'], true));
+        \SatispayGBusiness\Api::setKeyId($config['key_id']);
+    }
+
+    private function formatPemKey(string $key, bool $isPrivate): string
+    {
+        $key  = trim(str_replace(["\r", "\n", ' '], '', $key));
+        $type = $isPrivate ? 'PRIVATE KEY' : 'PUBLIC KEY';
+        return "-----BEGIN {$type}-----\n" . chunk_split($key, 64, "\n") . "-----END {$type}-----\n";
     }
 
     private function discountLabel(Discount $discount): string

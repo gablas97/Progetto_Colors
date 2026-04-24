@@ -297,6 +297,19 @@ document.querySelectorAll('[data-carousel]').forEach(function (carousel) {
     });
 });
 
+/* ── Password section toggle (account/profile) ───────────────────────── */
+const passwordToggleBtn = document.getElementById('toggle-password-section');
+const passwordSection   = document.getElementById('password-section');
+if (passwordToggleBtn && passwordSection) {
+    if (!passwordSection.classList.contains('hidden')) {
+        passwordToggleBtn.textContent = 'Annulla';
+    }
+    passwordToggleBtn.addEventListener('click', function () {
+        const isHidden = passwordSection.classList.toggle('hidden');
+        passwordToggleBtn.textContent = isHidden ? 'Cambia password' : 'Annulla';
+    });
+}
+
 /* ── Delete account toggle (account/profile) ─────────────────────────── */
 const deleteToggleBtn   = document.getElementById('delete-toggle-btn');
 const deleteAccountForm = document.getElementById('delete-account-form');

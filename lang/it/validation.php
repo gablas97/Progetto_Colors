@@ -185,5 +185,7 @@ return [
         'shipping_company'     => 'azienda',
         'guest_email'          => 'email',
         'payment_method'       => 'metodo di pagamento',
+        'current_password'     => 'password attuale',
+        'new_password'         => 'nuova password',
     ],
 ];

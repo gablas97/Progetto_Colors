@@ -24,26 +24,26 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="form-label">Nome</label>
-                <input type="text" name="first_name" value="{{ old('first_name', $user->first_name) }}" required class="input-field @error('first_name') border-red-400 @enderror">
+                <label for="first_name" class="form-label">Nome</label>
+                <input id="first_name" type="text" name="first_name" value="{{ old('first_name', $user->first_name) }}" required autocomplete="given-name" class="input-field @error('first_name') border-red-400 @enderror">
                 @error('first_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="form-label">Cognome</label>
-                <input type="text" name="last_name" value="{{ old('last_name', $user->last_name) }}" required class="input-field @error('last_name') border-red-400 @enderror">
+                <label for="last_name" class="form-label">Cognome</label>
+                <input id="last_name" type="text" name="last_name" value="{{ old('last_name', $user->last_name) }}" required autocomplete="family-name" class="input-field @error('last_name') border-red-400 @enderror">
                 @error('last_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
         </div>
 
         <div>
-            <label class="form-label">Email</label>
-            <input type="email" value="{{ $user->email }}" disabled class="input-field bg-gray-50 text-gray-400 cursor-not-allowed">
+            <label for="profile_email" class="form-label">Email</label>
+            <input id="profile_email" type="email" value="{{ $user->email }}" disabled class="input-field bg-gray-50 text-gray-400 cursor-not-allowed">
             <p class="text-xs text-gray-400 mt-1">L'email non può essere modificata.</p>
         </div>
 
         <div>
-            <label class="form-label">Telefono</label>
-            <input type="tel" name="phone" value="{{ old('phone', $user->phone) }}" class="input-field">
+            <label for="phone" class="form-label">Telefono</label>
+            <input id="phone" type="tel" name="phone" value="{{ old('phone', $user->phone) }}" autocomplete="tel" class="input-field">
         </div>
 
         <label class="flex items-center gap-2 cursor-pointer">
@@ -51,27 +51,40 @@
             <span class="text-xs text-gray-600">Iscritto alla newsletter</span>
         </label>
 
-        <hr class="border-gray-300">
-
+        {{-- Sezione cambio password --}}
         <div>
-            <label class="form-label">Password attuale</label>
-            <input type="password" name="current_password" class="input-field @error('current_password') border-red-400 @enderror">
-            @error('current_password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="form-label">Nuova password <span class="font-normal text-gray-400 normal-case tracking-normal">(lascia vuoto per non modificarla)</span></label>
-                <input type="password" name="new_password" class="input-field @error('new_password') border-red-400 @enderror">
-                @error('new_password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+            <div class="flex items-center justify-between">
+                <p class="form-label">Password</p>
+                <button type="button" id="toggle-password-section"
+                        class="text-xs text-primary uppercase font-semibold hover:text-primary-dark transition-colors cursor-pointer">
+                    Cambia password
+                </button>
             </div>
-            <div>
-                <label class="form-label">Conferma nuova password</label>
-                <input type="password" name="new_password_confirmation" class="input-field">
+
+            <div id="password-section" class="{{ $errors->has('current_password') || $errors->has('new_password') ? '' : 'hidden' }} mt-4 space-y-4">
+                <p class="text-xs text-gray-500">Inserisci la tua password attuale per confermare l'identità, poi scegli la nuova password.</p>
+                <div>
+                    <label for="current_password" class="form-label">Password attuale</label>
+                    <input id="current_password" type="password" name="current_password" autocomplete="current-password" class="input-field @error('current_password') border-red-400 @enderror">
+                    @error('current_password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="new_password" class="form-label">Nuova password</label>
+                        <input id="new_password" type="password" name="new_password" autocomplete="new-password" class="input-field @error('new_password') border-red-400 @enderror">
+                        @error('new_password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="new_password_confirmation" class="form-label">Conferma nuova password</label>
+                        <input id="new_password_confirmation" type="password" name="new_password_confirmation" autocomplete="new-password" class="input-field">
+                    </div>
+                </div>
             </div>
         </div>
 
         <button type="submit" class="btn-primary">Salva modifiche</button>
+
+        <hr class="border-gray-300">
     </form>
 
     {{-- Zona pericolo: eliminazione account --}}
@@ -91,8 +104,8 @@
             class="hidden mt-6 space-y-4">
             @csrf @method('DELETE')
             <div>
-                <label class="form-label">Conferma con la tua password</label>
-                <input type="password" name="password" required
+                <label for="delete_password" class="form-label">Conferma con la tua password</label>
+                <input id="delete_password" type="password" name="password" required autocomplete="current-password"
                     placeholder="La tua password attuale"
                     class="input-field @error('password', 'deleteAccount') border-red-400 @enderror">
                 @error('password', 'deleteAccount')

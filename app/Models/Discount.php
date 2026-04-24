@@ -162,11 +162,10 @@ class Discount extends Model
         }
 
         if ($userId !== null) {
-            $this->usages()->create([
-                'user_id'  => $userId,
-                'order_id' => $orderId,
-                'used_at'  => now(),
-            ]);
+            $this->usages()->updateOrCreate(
+                ['user_id' => $userId],
+                ['order_id' => $orderId, 'used_at' => now()],
+            );
         }
     }
 }

@@ -170,9 +170,20 @@ class Order extends Model
                           ->orderBy('id', 'desc')
                           ->first();
         
-        $number = $lastOrder ? ((int) substr($lastOrder->order_number, -5)) + 1 : 1;
-        
+        $number = $lastOrder ? ((int) preg_replace('/\D/', '', substr($lastOrder->order_number, -5))) + 1 : 1;
+
         return 'ORD-' . $year . '-' . str_pad($number, 5, '0', STR_PAD_LEFT);
+    }
+
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        return match($this->payment_method) {
+            'stripe'        => 'Carta di credito',
+            'paypal'        => 'PayPal',
+            'satispay'      => 'Satispay',
+            'bank_transfer' => 'Bonifico bancario',
+            default         => ucfirst($this->payment_method ?? ''),
+        };
     }
 
     public function getCustomerEmailAttribute(): string

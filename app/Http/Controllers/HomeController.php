@@ -33,17 +33,33 @@ class HomeController extends Controller
         $services = [
                 [
                     'name' => 'Stampe / fotocopie',
-                    'description' => 'Stampe A3, A4, A5, fotocopie, stampe su cartoncino lucido e fotografie.',
+                    'description' => 'Dalla singola pagina alle grandi tirature. Qualità tipografica, prezzi competitivi.
+
+                    ✓ Stampa digitale e offset
+                    ✓ Fotocopie B/N e colori
+                    ✓ Rilegature (spirale, termiche, hardcover)
+                    ✓ Plastificazioni e laminazioni
+                    ✓ Stampe di grande formato (poster, banner)',
                     'icon' => 'printer'
                 ],
                 [
                     'name' => 'Grafica personalizzata',
-                    'description' => 'Bigliettini da visita, buoni regalo, voucher e materiale promozionale.',
+                    'description' => 'Creiamo la tua identità visiva da zero: loghi, biglietti da visita, brochure, manifesti e qualsiasi materiale grafico di cui hai bisogno.
+
+                    ✓ Progettazione professionale
+                    ✓ Revisioni illimitate fino alla tua soddisfazione
+                    ✓ File pronti per la stampa e il web
+                    ✓ Tempi di consegna rapidi',
                     'icon' => 'sparkles'
                 ],
                 [
                     'name' => 'Timbri',
-                    'description' => 'Realizzazione di timbri personalizzati per uso professionale e personale.',
+                    'description' => 'Realizziamo timbri professionali su misura per aziende, professionisti e privati. Ogni timbro è creato con precisione e cura artigianale.
+
+                    ✓ Timbri autoinchiostranti e tradizionali
+                    ✓ Design personalizzato incluso
+                    ✓ Qualità garantita
+                    ✓ Consegna in 48-72 ore',
                     'icon' => 'stamp'
                 ],
         ];
